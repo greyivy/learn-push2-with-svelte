@@ -4,24 +4,30 @@
 	import { onMount } from "svelte";
 	import DevicePicker from "./DevicePicker.svelte";
 
-	import Push2Controller from "./Push2/Push2Controller";
-	import Push2Component from "./Push2/Push2Component.svelte";
+	import Push2Controller from "./Controller/Push2/Push2Controller";
+	import Push2Component from "./Controller/Push2/Push2Component.svelte";
 
-	import SynthPiano from "./SynthPiano";
+	import SynthBasic from "./Synth/SynthBasic";
+	import SynthPiano from "./Synth/SynthPiano";
 
 	import {
 		LayoutGenerator,
 		LayoutGeneratorChromatic,
 	} from "./LayoutGenerator";
+
 	import type { Synth } from "./Synth";
 	import type { Controller } from "./Controller";
+	import type { Note } from "@tonaljs/core";
+	import { note } from "@tonaljs/core";
 
 	let initialized: boolean;
 
 	let inputId: string;
 	let outputId: string;
 
-	let layoutGenerator: LayoutGenerator = new LayoutGeneratorChromatic("C", 2);
+	let layoutGenerator: LayoutGenerator = new LayoutGeneratorChromatic(
+		note("C2") as Note
+	);
 
 	let synth: Synth;
 
@@ -36,6 +42,7 @@
 		});
 
 		synth = new SynthPiano();
+		// synth = new SynthBasic();
 	});
 
 	let controller: Controller;

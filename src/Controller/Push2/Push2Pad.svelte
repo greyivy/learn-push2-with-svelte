@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { Pad } from "../Pad";
+    import type { Pad } from "../../Pad";
 
     export let pad: Pad;
 
@@ -20,7 +20,7 @@
     <span
         class="front"
         style="--pressedColor: {pad.pressedColor.html};--highlightedColor: {pad
-            .highlightedColor.html}">{pad.note.name}</span
+            .highlightedColor.html}">{pad.note.name.toString()}</span
     >
 </button>
 

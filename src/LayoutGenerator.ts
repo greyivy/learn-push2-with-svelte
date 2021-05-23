@@ -1,5 +1,7 @@
 import type { Controller } from "./Controller"
-import { Note } from "./Note"
+
+import type { Note } from "@tonaljs/core";
+import { note } from "@tonaljs/core";
 
 const NOTES: string[] = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
@@ -10,26 +12,26 @@ export abstract class LayoutGenerator {
 }
 
 export class LayoutGeneratorChromatic extends LayoutGenerator {
-  readonly root: string;
-  readonly startingOctave: number;
+  readonly root: Note;
 
-  constructor(root: string, startingOctave: number) {
+  constructor(root: Note) {
     super()
 
     this.root = root
-    this.startingOctave = startingOctave
   }
 
   generate(controller: Controller) {
     let notes = {}
 
+    console.log(this.root)
+
     let currentPadNumber: number = controller.offset
-    let currentNote: number = NOTES.indexOf(this.root)
-    let currentOctave: number = this.startingOctave
+    let currentNote: number = NOTES.indexOf(this.root.pc)
+    let currentOctave: number = this.root.oct
 
     for (let r = 0; r < controller.rows; r++) {
       for (let c = 0; c < controller.columns; c++) {
-        notes[currentPadNumber] = new Note(NOTES[currentNote], currentOctave)
+        notes[currentPadNumber] = note(`${NOTES[currentNote]}${currentOctave}`)
 
         if (currentNote === NOTES.length - 1) {
           currentNote = 0

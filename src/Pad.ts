@@ -1,7 +1,7 @@
 import { writable, Writable } from 'svelte/store'
-import type { Note } from './Note';
 import { getColorVelocity, PadColor } from './PadColor'
 import type { Controller } from './Controller'
+import type { Note } from '@tonaljs/core'
 
 const DEFAULT_PRESSED_COLOR = 'RED'
 const DEFAULT_HIGHLIGHTED_COLOR = 'GREEN'
@@ -17,7 +17,7 @@ class Pad {
   readonly highlighted: Writable<boolean>;
   readonly pressed: Writable<boolean>;
 
-  pressedColor: PadColor; // TODO Color class
+  pressedColor: PadColor;
   highlightedColor: PadColor;
 
   constructor(controller: Controller, padNumber: number, note: Note) {
@@ -35,7 +35,7 @@ class Pad {
     this.pressedState = true;
     this.pressed.set(this.pressedState);
 
-    this.controller.synth.down(this.note.name, velocity) // TODO velocity
+    this.controller.synth.down(this.note, velocity)
 
     this.draw()
   }
@@ -43,7 +43,7 @@ class Pad {
     this.pressedState = false;
     this.pressed.set(this.pressedState);
 
-    this.controller.synth.up(this.note.name)
+    this.controller.synth.up(this.note)
 
     this.draw()
   }

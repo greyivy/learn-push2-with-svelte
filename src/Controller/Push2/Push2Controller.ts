@@ -1,5 +1,5 @@
-import { Controller } from '../Controller'
-import type { PadColorCollection } from '../PadColor'
+import { Controller } from '../../Controller'
+import type { PadColorCollection } from '../../PadColor'
 
 const padColors: PadColorCollection = {
   RED: {

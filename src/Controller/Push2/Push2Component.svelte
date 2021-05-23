@@ -8,14 +8,12 @@
 
     const { notes: controllerNotes } = controller;
 
-    $: notes = JSON.stringify([...$controllerNotes]);
+    $: notes = JSON.stringify([...$controllerNotes].map(n => n.name.toString()));
 
     $: layoutRows = controller.getLayout();
 
     // e.g. highlight the C4 major scale
-    for (const note of harmonics.scale("C4 major")) {
-        controller.getPadByNote(note).highlight();
-    }
+    // controller.highlightNotes(harmonics.scale("C4 major"));
 </script>
 
 <div>

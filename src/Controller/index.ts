@@ -1,8 +1,9 @@
 import { Writable, writable } from 'svelte/store'
+import type { Note } from '@tonaljs/core'
 import WebMidi, { Input, Output } from 'webmidi'
-import { Pad } from './Pad'
-import type { PadColorCollection } from './PadColor'
-import type { Synth } from './Synth'
+import { Pad } from '../Pad'
+import type { PadColorCollection } from '../PadColor'
+import type { Synth } from '../Synth'
 
 type PadCollection = {
   [padNumber: number]: Pad
@@ -19,7 +20,7 @@ class Controller {
   readonly output: Output;
   readonly synth: Synth;
 
-  readonly notes: Writable<Set<string>>;
+  readonly notes: Writable<Set<Note>>;
   readonly pads: PadCollection;
 
   /**
@@ -59,15 +60,16 @@ class Controller {
     this.input.addListener('noteon', 'all', e => {
       const pad = this.pads[e.note.number]
       this.notes.update(notes => {
-        notes.add(pad.note.name)
+        // TODO this doesn't happen when a note is clicked
+        notes.add(pad.note)
         return notes
       })
-      pad.on()
+      pad.on(e.velocity)
     })
     this.input.addListener('noteoff', 'all', e => {
       const pad = this.pads[e.note.number]
       this.notes.update(notes => {
-        notes.delete(pad.note.name)
+        notes.delete(pad.note)
         return notes
       })
       pad.off()
@@ -89,8 +91,8 @@ class Controller {
     this.getLayout()
   }
 
-  getPadByNote(note: string): Pad {
-    return Object.values(this.pads).find(pad => pad.note.name === note) || null
+  getPadByNote(note: Note): Pad {
+    return Object.values(this.pads).find(pad => pad.note === note) || null
   }
   getPadByIndex(index: number): Pad {
     return this.pads[this.offset + index]
@@ -113,6 +115,18 @@ class Controller {
     }
 
     return layout
+  }
+
+  highlightNotes(notes: Note[]): void {
+    for (const note of notes) {
+      this.getPadByNote(note).highlight()
+    }
+  }
+
+  highlightClear(): void {
+    for (const pad of Object.values(this.pads)) {
+      pad.unhighlight()
+    }
   }
 
   destroy(): void {
