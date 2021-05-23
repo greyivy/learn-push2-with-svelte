@@ -1,18 +1,27 @@
-<script>
-    export let pad;
+<script lang="ts">
+    import type { Pad } from "../Pad";
 
-    const { note, pressed: padPressed } = pad;
+    export let pad: Pad;
+
+    const padPressed = pad.pressed;
+    const padHighlighted = pad.highlighted;
 
     $: pressed = $padPressed;
+    $: highlighted = $padHighlighted;
 </script>
 
 <button
     class="pad"
     class:pressed
+    class:highlighted
     on:mousedown={() => pad.on()}
     on:mouseup={() => pad.off()}
 >
-    <span class="front">{note.name}</span>
+    <span
+        class="front"
+        style="--pressedColor: {pad.pressedColor.html};--highlightedColor: {pad
+            .highlightedColor.html}">{pad.note.name}</span
+    >
 </button>
 
 <style>
@@ -50,10 +59,13 @@
         transform: translateY(-6px);
         transition: transform 250ms cubic-bezier(0.3, 0.7, 0.4, 1.5);
     }
+    .highlighted .front {
+        background: var(--highlightedColor);
+    }
     .pressed .front {
         transform: translateY(0px);
         transition: transform 34ms;
 
-        background: pink;
+        background: var(--pressedColor);
     }
 </style>

@@ -1,15 +1,17 @@
-<script>
-    import WebMidi from "webmidi";
+<script lang="ts">
+    import WebMidi, { Input, Output } from "webmidi";
     import { onMount } from "svelte";
 
-    export let type;
-    export let value;
+    export let type: "input" | "output";
+    export let value: string = null;
 
-    let devices = type === "input" ? WebMidi.inputs : WebMidi.outputs;
-    WebMidi.addListener("connected", function (e) {
+    type device = Input | Output;
+
+    let devices: device[] = type === "input" ? WebMidi.inputs : WebMidi.outputs;
+    WebMidi.addListener("connected", () => {
         devices = type === "input" ? WebMidi.inputs : WebMidi.outputs;
     });
-    WebMidi.addListener("disconnected", function (e) {
+    WebMidi.addListener("disconnected", () => {
         devices = type === "input" ? WebMidi.inputs : WebMidi.outputs;
 
         if (!devices.find((d) => d.id === value)) {
@@ -17,7 +19,7 @@
         }
     });
 
-    const localStorageKey = `device-${type}`;
+    const localStorageKey: string = `device-${type}`;
 
     $: {
         if (value) {
@@ -26,12 +28,10 @@
     }
 
     onMount(async () => {
-        const storedValue = localStorage.getItem(localStorageKey);
+        const storedValue: string = localStorage.getItem(localStorageKey);
 
         if (storedValue && devices.find((d) => d.id === storedValue)) {
             value = storedValue;
-        } else {
-            value = devices[0] && devices[0].id;
         }
     });
 </script>

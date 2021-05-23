@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import WebMidi from "webmidi";
 
 	import { onMount } from "svelte";
@@ -9,11 +9,21 @@
 
 	import SynthPiano from "./SynthPiano";
 
-	import { LayoutGeneratorChromatic } from "./LayoutGenerator";
+	import {
+		LayoutGenerator,
+		LayoutGeneratorChromatic,
+	} from "./LayoutGenerator";
+	import type { Synth } from "./Synth";
+	import type { Controller } from "./Controller";
 
-	let initialized;
+	let initialized: boolean;
 
-	let piano;
+	let inputId: string;
+	let outputId: string;
+
+	let layoutGenerator: LayoutGenerator = new LayoutGeneratorChromatic("C", 2);
+
+	let synth: Synth;
 
 	// Initialize WebMidi
 	onMount(() => {
@@ -25,15 +35,10 @@
 			}
 		});
 
-		piano = new SynthPiano();
+		synth = new SynthPiano();
 	});
 
-	let inputId;
-	let outputId;
-
-	let layoutGenerator = new LayoutGeneratorChromatic("C", 2);
-
-	let controller;
+	let controller: Controller;
 	$: {
 		if (initialized && inputId && outputId) {
 			if (controller) {
@@ -45,7 +50,7 @@
 				layoutGenerator,
 				inputId,
 				outputId,
-				piano
+				synth
 			);
 		} else {
 			if (controller) {
