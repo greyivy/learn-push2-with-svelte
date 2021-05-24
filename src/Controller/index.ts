@@ -4,7 +4,7 @@ import type { Scale } from "@tonaljs/scale";
 import { get as getScale } from "@tonaljs/scale";
 import WebMidi, { Input, Output } from 'webmidi'
 import { Pad, PadNote } from '../Pad'
-import type { PadColorCollection } from '../PadColor'
+import type { PadColor, PadColorCollection, PadNoteColorCollection } from '../PadColor'
 import type { Synth } from '../Synth'
 import type { LayoutGenerator } from '../LayoutGenerator'
 import type { SvelteComponent } from 'svelte'
@@ -28,8 +28,6 @@ export abstract class Controller {
 
   scaleName: string;
 
-  readonly padColors: PadColorCollection;
-
   input: Input | false;
   output: Output | false;
   synth: Synth;
@@ -46,13 +44,11 @@ export abstract class Controller {
   constructor(
     rows: number,
     columns: number,
-    offset: number,
-    padColors: PadColorCollection,
+    offset: number
   ) {
     this.rows = rows
     this.columns = columns
     this.offset = offset
-    this.padColors = padColors
 
     this.noteState = new Set()
     this.notes = writable(new Set())
@@ -67,6 +63,13 @@ export abstract class Controller {
       )
     }
   }
+
+  abstract padColors: PadColorCollection;
+  abstract defaultPadNoteColors: PadNoteColorCollection;
+  abstract defaultPadPressedColor: PadColor;
+  abstract defaultPadHighlightColor: PadColor;
+  abstract defaultPadHoverColor: PadColor;
+
   getPadsByNote(note: Note): Pad[] {
     return Object.values(this.pads).filter(pad => pad.note === note)
   }
@@ -108,9 +111,7 @@ export abstract class Controller {
         scales[note.oct] = getScale(`${layoutGenerator.root.pc}${note.oct} ${this.scaleName}`)
       }
 
-      note.isRoot = scales[note.oct].notes[0] === note.name
-      note.isScale = scales[note.oct].notes.includes(note.name)
-      note.dist = scales[note.oct].notes.indexOf(note.name) + 1
+      note.noteNumber = scales[note.oct].notes.indexOf(note.name) + 1
 
       this.pads[padNumber].setNote(note)
     }
@@ -182,8 +183,6 @@ export abstract class Controller {
   }
 
   destroy(): void {
-    console.log('Destroying controller')
-
     if (this.input) {
       this.input.removeListener()
     }

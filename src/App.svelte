@@ -153,12 +153,16 @@
 	</select>
 
 	{#if controller}
-		<svelte:component
-			this={controllerConfiguration.getMeta().component}
-			{controller}
-		/>
+		<div>
+			<svelte:component
+				this={controllerConfiguration.getMeta().component}
+				{controller}
+			/>
 
-		<ChordHistory {controller} />
+			<div style="float: right; clear: both;">
+				<ChordHistory {controller} />
+			</div>
+		</div>
 	{/if}
 </main>
 
