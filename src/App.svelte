@@ -1,64 +1,72 @@
 <script lang="ts">
-	import WebMidi from "webmidi";
-
-	import { onMount } from "svelte";
 	import DevicePicker from "./DevicePicker.svelte";
 
-	import Push2Controller from "./Controller/Push2/Push2Controller";
-	import Push2Component from "./Controller/Push2/Push2Component.svelte";
+	import type {
+		LayoutGenerator,
+		LayoutGeneratorConfiguration,
+	} from "./LayoutGenerator";
+	import {
+		LayoutGeneratorAbleton3rds,
+		LayoutGeneratorAbleton4ths,
+	} from "./LayoutGenerator/LayoutGeneratorAbleton";
+	import { LayoutGeneratorSequential } from "./LayoutGenerator/LayoutGeneratorSequential";
 
-	import SynthBasic from "./Synth/SynthBasic";
+	import type { Controller, ControllerConfiguration } from "./Controller";
+	import Push2Controller from "./Controller/Push2/Push2Controller";
+
+	import type { Synth, SynthConfiguration } from "./Synth";
+	import {
+		SynthBasic,
+		SynthFM,
+		SynthAM,
+		SynthNoise,
+	} from "./Synth/SynthTone";
 	import SynthPiano from "./Synth/SynthPiano";
 
-	import {
-		LayoutGenerator,
-		LayoutGeneratorChromatic,
-	} from "./LayoutGenerator";
-
-	import type { Synth } from "./Synth";
-	import type { Controller } from "./Controller";
 	import type { Note } from "@tonaljs/core";
 	import { note } from "@tonaljs/core";
 
-	let initialized: boolean;
+	import { NOTES } from "./helpers";
+	import { Scale } from "@tonaljs/tonal";
+	import ChordHistory from "./ChordHistory/index.svelte";
 
 	let inputId: string;
 	let outputId: string;
 
-	let layoutGenerator: LayoutGenerator = new LayoutGeneratorChromatic(
-		note("C2") as Note
-	);
+	const controllerConfigurations: ControllerConfiguration[] = [
+		Push2Controller,
+	];
+	let controllerConfiguration: ControllerConfiguration =
+		controllerConfigurations[0];
+	let controller: Controller;
 
+	const synthConfigurations: SynthConfiguration[] = [
+		SynthBasic,
+		SynthFM,
+		SynthAM,
+		SynthNoise,
+		SynthPiano,
+	];
+	let synthConfiguration: SynthConfiguration = synthConfigurations[0];
 	let synth: Synth;
 
-	// Initialize WebMidi
-	onMount(() => {
-		WebMidi.enable((e) => {
-			if (e) {
-				alert(`WebMidi could not be enabled: ${e.message}`);
-			} else {
-				initialized = true;
-			}
-		});
+	let rootLetter: string = "C";
+	let rootOctave: number = 2;
 
-		synth = new SynthPiano();
-		// synth = new SynthBasic();
-	});
+	let scaleName: string = "major";
 
-	let controller: Controller;
+	const layoutGeneratorConfigurations: LayoutGeneratorConfiguration[] = [
+		LayoutGeneratorAbleton4ths,
+		// LayoutGeneratorAbleton3rds,
+		LayoutGeneratorSequential,
+	];
+	let layoutGeneratorConfiguration: LayoutGeneratorConfiguration =
+		layoutGeneratorConfigurations[0];
+	let layoutGenerator: LayoutGenerator;
+
 	$: {
-		if (initialized && inputId && outputId) {
-			if (controller) {
-				controller.destroy();
-				controller = null;
-			}
-
-			controller = new Push2Controller(
-				layoutGenerator,
-				inputId,
-				outputId,
-				synth
-			);
+		if (controllerConfiguration) {
+			controller = controllerConfiguration.getInstance();
 		} else {
 			if (controller) {
 				controller.destroy();
@@ -66,16 +74,91 @@
 			}
 		}
 	}
+
+	$: {
+		if (controller) {
+			controller.setDevices(inputId, outputId);
+		}
+	}
+
+	$: {
+		synth = synthConfiguration.getInstance();
+
+		if (controller) {
+			controller.setSynth(synth);
+		}
+	}
+
+	$: {
+		layoutGenerator = layoutGeneratorConfiguration.getInstance(
+			note(`${rootLetter}${rootOctave}`) as Note
+		);
+
+		if (controller) {
+			controller.setLayoutGenerator(layoutGenerator, scaleName);
+		}
+	}
 </script>
 
 <main>
-	{#if initialized}
-		<DevicePicker type="input" bind:value={inputId} />
-		<DevicePicker type="output" bind:value={outputId} />
-	{/if}
+	<DevicePicker type="input" bind:value={inputId} />
+	<DevicePicker type="output" bind:value={outputId} />
+
+	<select bind:value={controllerConfiguration}>
+		<option value={null}> None </option>
+		{#each controllerConfigurations as configuration}
+			<option value={configuration}>
+				{configuration.getMeta().label}
+			</option>
+		{/each}
+	</select>
+
+	<select bind:value={layoutGeneratorConfiguration}>
+		{#each layoutGeneratorConfigurations as configuration}
+			<option value={configuration}>
+				{configuration.getMeta().label}
+			</option>
+		{/each}
+	</select>
+
+	<select bind:value={synthConfiguration}>
+		{#each synthConfigurations as configuration}
+			<option value={configuration}>
+				{configuration.getMeta().label}
+			</option>
+		{/each}
+	</select>
+
+	<select bind:value={rootLetter}>
+		{#each NOTES as note}
+			<option value={note}>
+				{note}
+			</option>
+		{/each}
+	</select>
+	<!-- TODO how many octaves? -->
+	<select bind:value={rootOctave}>
+		{#each [1, 2, 3, 4, 5] as octave}
+			<option value={octave}>
+				{octave}
+			</option>
+		{/each}
+	</select>
+	<select bind:value={scaleName}>
+		{#each Scale.names() as scale}
+			<option value={scale}>
+				{scale}
+			</option>
+		{/each}
+	</select>
 
 	{#if controller}
-		<Push2Component {controller} />
+		<svelte:component
+			this={controllerConfiguration.getMeta().component}
+			{controller}
+		/>
+
+		<ChordHistory {controller} />
 	{/if}
 </main>
 

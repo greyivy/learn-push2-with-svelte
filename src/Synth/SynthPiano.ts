@@ -1,7 +1,7 @@
 import { Piano } from '@tonejs/piano'
 import { Writable, writable } from 'svelte/store'
 import type { Note } from '@tonaljs/core'
-import { Synth } from './'
+import { Synth, SynthMeta } from './'
 
 class SynthPiano extends Synth {
   readonly initialized: Writable<boolean> = writable(false)
@@ -20,6 +20,17 @@ class SynthPiano extends Synth {
       this.initialized.set(true)
     })
   }
+
+  static getInstance(): SynthPiano {
+    return new SynthPiano()
+  }
+
+  static getMeta(): SynthMeta {
+    return {
+        id: 'piano',
+        label: 'Piano'
+    }
+}
 
   down(note: Note, velocity: number): void {
     if (this.piano) {

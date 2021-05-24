@@ -1,6 +1,6 @@
-import App from './App.svelte'
+import AppLoader from './AppLoader.svelte'
 
-const app = new App({
+const app = new AppLoader({
   target: document.body
 })
 

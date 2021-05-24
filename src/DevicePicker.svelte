@@ -37,7 +37,7 @@
 </script>
 
 <select bind:value>
-    <option value={null}> None </option>
+    <option value={null}>None</option>
 
     {#each devices as device}
         <option value={device.id}>

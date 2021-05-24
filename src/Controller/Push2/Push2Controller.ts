@@ -1,5 +1,8 @@
-import { Controller } from '../../Controller'
+import type { SvelteComponent } from 'svelte';
+import { Controller, ControllerMeta } from '../../Controller'
 import type { PadColorCollection } from '../../PadColor'
+
+import Push2Component from './Push2Component.svelte'
 
 const padColors: PadColorCollection = {
   RED: {
@@ -21,8 +24,20 @@ const padColors: PadColorCollection = {
 }
 
 class Push2Controller extends Controller {
-  constructor(layoutGenerator, inputId, outputId, synth) {
-    super(8, 8, 36, padColors, layoutGenerator, inputId, outputId, synth)
+  constructor() {
+    super(8, 8, 36, padColors)
+  }
+
+  static getInstance() {
+    return new Push2Controller()
+  }
+
+  static getMeta(): ControllerMeta {
+    return {
+      id: 'Push2',
+      label: 'Ableton Push 2',
+      component: Push2Component
+    }
   }
 }
 

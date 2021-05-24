@@ -3,25 +3,38 @@
 
     export let pad: Pad;
 
-    const padPressed = pad.pressed;
-    const padHighlighted = pad.highlighted;
+    const controller = pad.controller;
 
-    $: pressed = $padPressed;
-    $: highlighted = $padHighlighted;
+    const padNote = pad.noteStore;
+    const padPressed = pad.pressedStore;
+    const padHighlighted = pad.highlightedStore;
+
+    $: note = $padNote;
+    $: isPressed = $padPressed;
+    $: isHighlighted = $padHighlighted;
+
+    // TODO display intervals
 </script>
 
 <button
     class="pad"
-    class:pressed
-    class:highlighted
-    on:mousedown={() => pad.on()}
-    on:mouseup={() => pad.off()}
+    class:isPressed
+    class:isHighlighted
+    class:isRoot={note.isRoot}
+    class:isScale={note.isScale}
+    on:mousedown={() => controller.on(pad.note, 1)}
+    on:mouseup={() => controller.off(pad.note)}
 >
     <span
         class="front"
-        style="--pressedColor: {pad.pressedColor.html};--highlightedColor: {pad
-            .highlightedColor.html}">{pad.note.name.toString()}</span
-    >
+        style="--rootColor: {pad.rootColor.html}; --scaleColor: {pad.scaleColor
+            .html}; --pressedColor: {pad.pressedColor
+            .html}; --highlightedColor: {pad.highlightedColor.html}"
+        ><div class="note">{note.name.toString()}</div>
+        {#if note.dist}
+            <div class="dist">{note.dist}</div>
+        {/if}
+    </span>
 </button>
 
 <style>
@@ -48,21 +61,36 @@
 
         display: block;
         text-align: center;
-        line-height: 48px;
+        /* line-height: 36px; */
         width: 48px;
         height: 48px;
         padding: 0;
         border-radius: 4px;
+    }
+
+    .note {
+        line-height: 32px;
         font-size: 1.25rem;
     }
+    .dist {
+        line-height: 12px;
+        font-size: 0.75rem;
+    }
+
     .front:hover {
         transform: translateY(-6px);
         transition: transform 250ms cubic-bezier(0.3, 0.7, 0.4, 1.5);
     }
-    .highlighted .front {
+    .isScale .front {
+        background: var(--scaleColor);
+    }
+    .isRoot .front {
+        background: var(--rootColor);
+    }
+    .isHighlighted .front {
         background: var(--highlightedColor);
     }
-    .pressed .front {
+    .isPressed .front {
         transform: translateY(0px);
         transition: transform 34ms;
 
