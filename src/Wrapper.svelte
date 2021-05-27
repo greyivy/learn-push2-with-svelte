@@ -1,7 +1,10 @@
 <script lang="ts">
-    import WebMidi from "webmidi";
-
     import { onMount } from "svelte";
+
+    import "chota";
+    import "./variables.css";
+
+    import WebMidi from "webmidi";
 
     import App from "./App.svelte";
 

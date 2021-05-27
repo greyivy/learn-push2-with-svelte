@@ -21,7 +21,7 @@
         note && (pad.padNoteColor?.background || DEFAULT_NOTE_BACKGROUND_COLOR);
 </script>
 
-<button
+<div
     class="pad"
     class:isPressed
     class:isHighlighted
@@ -58,21 +58,23 @@
             <div class="note-number">{note.noteNumber}</div>
         {/if}
     </span>
-</button>
+</div>
 
 <style>
     .pad {
-        margin: 4px;
-        border-radius: 4px;
+        margin: 0.2em;
+        margin-bottom: 0.15em;
+        border-radius: 0.25em;
         background: transparent;
         border: none;
         padding: 0;
         cursor: pointer;
-        outline-offset: 4px;
-        width: 64px;
-        height: 48px;
+        outline-offset: 0.1em;
+        width: 4em;
+        height: 3em;
         display: inline-block;
         position: relative;
+        user-select: none;
     }
 
     .front {
@@ -81,7 +83,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        border-radius: 4px;
+        border-radius: 0.25em;
         display: block;
 
         background: var(--noteBackgroundColor);
@@ -89,14 +91,14 @@
         font-style: italic;
         text-align: center;
 
-        transform: translateY(-4px);
+        transform: translateY(-0.25em);
         transition: transform 400ms cubic-bezier(0.3, 0.7, 0.4, 1);
         will-change: transform;
 
         pointer-events: none;
     }
     .pad:hover .front {
-        transform: translateY(-6px);
+        transform: translateY(-0.3em);
         transition: transform 250ms cubic-bezier(0.3, 0.7, 0.4, 1.5);
 
         background: var(--hoverBackgroundColor);
@@ -109,7 +111,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        border-radius: 4px;
+        border-radius: 0.25em;
         display: block;
 
         background: var(--noteBackgroundColor);
@@ -120,12 +122,12 @@
     }
 
     .note {
-        line-height: 32px;
-        font-size: 1.25rem;
+        line-height: 1.5em;
+        font-size: 1.25em;
     }
     .note-number {
-        line-height: 12px;
-        font-size: 0.75rem;
+        line-height: 1em;
+        font-size: 0.75em;
     }
 
     .isScale .front {
@@ -143,11 +145,11 @@
 
     .isPressed .front,
     .isPressed .back {
-        color: var(--pressedColor);
-        background: var(--pressedBackgroundColor);
+        color: var(--pressedColor) !important;
+        background: var(--pressedBackgroundColor) !important;
     }
     .isPressed .front {
-        transform: translateY(0px);
+        transform: translateY(0) !important;
         transition: transform 34ms;
     }
 </style>

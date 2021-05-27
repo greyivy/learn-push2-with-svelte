@@ -1,72 +1,42 @@
 <script lang="ts">
+	import { Modal, Button, Card, Nav } from "svelte-chota";
+	import { mdiCog } from "@mdi/js";
+
 	import DevicePicker from "./DevicePicker.svelte";
 
-	import type {
-		LayoutGenerator,
-		LayoutGeneratorConfiguration,
-	} from "./LayoutGenerator";
-	import {
-		LayoutGeneratorAbleton3rds,
-		LayoutGeneratorAbleton4ths,
-	} from "./LayoutGenerator/LayoutGeneratorAbleton";
-	import { LayoutGeneratorSequential } from "./LayoutGenerator/LayoutGeneratorSequential";
-
-	import type { Controller, ControllerConfiguration } from "./Controller";
-	import Push2Controller from "./Controller/Push2/Push2Controller";
-
-	import type { Synth, SynthConfiguration } from "./Synth";
-	import {
-		SynthBasic,
-		SynthFM,
-		SynthAM,
-		SynthNoise,
-	} from "./Synth/SynthTone";
-	import SynthPiano from "./Synth/SynthPiano";
+	import type { LayoutGenerator } from "./LayoutGenerator";
+	import type { Controller } from "./Controller";
+	import type { Synth } from "./Synth";
 
 	import type { Note } from "@tonaljs/core";
 	import { note } from "@tonaljs/core";
 
-	import { NOTES } from "./helpers";
-	import { Scale } from "@tonaljs/tonal";
 	import ChordHistory from "./ChordHistory/index.svelte";
+	import {
+		inputId,
+		outputId,
+		controllerConfiguration,
+		synthConfiguration,
+		layoutGeneratorConfiguration,
+		scaleName,
+		rootLetter,
+		rootOctave,
+	} from "./configurationStore";
+	import Config from "./Config.svelte";
+	import { xlink_attr } from "svelte/internal";
 
-	let inputId: string;
-	let outputId: string;
-
-	const controllerConfigurations: ControllerConfiguration[] = [
-		Push2Controller,
-	];
-	let controllerConfiguration: ControllerConfiguration =
-		controllerConfigurations[0];
 	let controller: Controller;
-
-	const synthConfigurations: SynthConfiguration[] = [
-		SynthBasic,
-		SynthFM,
-		SynthAM,
-		SynthNoise,
-		SynthPiano,
-	];
-	let synthConfiguration: SynthConfiguration = synthConfigurations[0];
 	let synth: Synth;
-
-	let rootLetter: string = "C";
-	let rootOctave: number = 2;
-
-	let scaleName: string = "major";
-
-	const layoutGeneratorConfigurations: LayoutGeneratorConfiguration[] = [
-		LayoutGeneratorAbleton4ths,
-		// LayoutGeneratorAbleton3rds,
-		LayoutGeneratorSequential,
-	];
-	let layoutGeneratorConfiguration: LayoutGeneratorConfiguration =
-		layoutGeneratorConfigurations[0];
 	let layoutGenerator: LayoutGenerator;
 
+	let controllerWidth: number;
+	let controllerScale: number;
+
+	$: controllerScale = (1.5 * controllerWidth) / 640;
+
 	$: {
-		if (controllerConfiguration) {
-			controller = controllerConfiguration.getInstance();
+		if ($controllerConfiguration) {
+			controller = $controllerConfiguration.getInstance();
 		} else {
 			if (controller) {
 				controller.destroy();
@@ -77,12 +47,12 @@
 
 	$: {
 		if (controller) {
-			controller.setDevices(inputId, outputId);
+			controller.setDevices($inputId, $outputId);
 		}
 	}
 
 	$: {
-		synth = synthConfiguration.getInstance();
+		synth = $synthConfiguration.getInstance();
 
 		if (controller) {
 			controller.setSynth(synth);
@@ -90,81 +60,115 @@
 	}
 
 	$: {
-		layoutGenerator = layoutGeneratorConfiguration.getInstance(
-			note(`${rootLetter}${rootOctave}`) as Note
+		layoutGenerator = $layoutGeneratorConfiguration.getInstance(
+			note(`${$rootLetter}${$rootOctave}`) as Note
 		);
 
 		if (controller) {
-			controller.setLayoutGenerator(layoutGenerator, scaleName);
+			controller.setLayoutGenerator(layoutGenerator, $scaleName);
 		}
 	}
+
+	let configModalOpen: boolean = false;
 </script>
 
-<main>
-	<DevicePicker type="input" bind:value={inputId} />
-	<DevicePicker type="output" bind:value={outputId} />
+<div class="app">
+	<Modal bind:open={configModalOpen}>
+		<Card>
+			<h4 slot="header">Settings</h4>
 
-	<select bind:value={controllerConfiguration}>
-		<option value={null}> None </option>
-		{#each controllerConfigurations as configuration}
-			<option value={configuration}>
-				{configuration.getMeta().label}
-			</option>
-		{/each}
-	</select>
+			<Config />
 
-	<select bind:value={layoutGeneratorConfiguration}>
-		{#each layoutGeneratorConfigurations as configuration}
-			<option value={configuration}>
-				{configuration.getMeta().label}
-			</option>
-		{/each}
-	</select>
-
-	<select bind:value={synthConfiguration}>
-		{#each synthConfigurations as configuration}
-			<option value={configuration}>
-				{configuration.getMeta().label}
-			</option>
-		{/each}
-	</select>
-
-	<select bind:value={rootLetter}>
-		{#each NOTES as note}
-			<option value={note}>
-				{note}
-			</option>
-		{/each}
-	</select>
-	<!-- TODO how many octaves? -->
-	<select bind:value={rootOctave}>
-		{#each [1, 2, 3, 4, 5] as octave}
-			<option value={octave}>
-				{octave}
-			</option>
-		{/each}
-	</select>
-	<select bind:value={scaleName}>
-		{#each Scale.names() as scale}
-			<option value={scale}>
-				{scale}
-			</option>
-		{/each}
-	</select>
-
-	{#if controller}
-		<div>
-			<svelte:component
-				this={controllerConfiguration.getMeta().component}
-				{controller}
-			/>
-
-			<div style="float: right; clear: both;">
-				<ChordHistory {controller} />
+			<div slot="footer" class="is-right">
+				<Button clear on:click={() => (configModalOpen = false)}
+					>Close</Button
+				>
 			</div>
-		</div>
-	{/if}
-</main>
+		</Card>
+	</Modal>
+
+	<Nav>
+		<Button
+			slot="left"
+			icon={mdiCog}
+			on:click={() => (configModalOpen = true)}>Settings</Button
+		>
+
+		<a slot="center" href="/" class="brand">LOGO</a>
+
+		<a slot="right" href="/">Link 3</a>
+	</Nav>
+
+	<main>
+		<svg height="250" width={controllerWidth} class="polygon">
+			<polygon
+				points="0,0 0,250 {(controllerWidth || 0) * 1.25},250"
+				style="fill:var(--melon);"
+			/>
+		</svg>
+
+		{#if controller}
+			<div
+				class="controller-container"
+				style="font-size: {controllerScale}rem;"
+				bind:clientWidth={controllerWidth}
+			>
+				<svelte:component
+					this={$controllerConfiguration.getMeta().component}
+					{controller}
+				/>
+			</div>
+
+			<div class="ui-container">
+				<Card>
+					<ChordHistory {controller} />
+				</Card>
+			</div>
+		{/if}
+	</main>
+</div>
 
 <style>
+	:global(body) {
+		overflow: hidden;
+	}
+
+	.app :global(.nav) {
+		background: var(--color-primary);
+		color: var(--text-light);
+		border-bottom: 0.25rem solid var(--sandy-brown);
+	}
+	.app :global(.brand) {
+		color: var(--text-light);
+	}
+
+	main {
+		background: var(--apricot);
+		height: calc(100vh - 50px);
+		display: flex;
+		align-items: center;
+		position: relative;
+	}
+	main > div {
+		flex: 1;
+		z-index: 1;
+	}
+
+	.polygon {
+		position: absolute;
+		bottom: 0;
+	}
+
+	.controller-container {
+		text-align: center;
+	}
+
+	.ui-container {
+		height: 100%;
+	}
+	.ui-container :global(.card) {
+		height: 100%;
+		width: 100%;
+		border-radius: 0;
+	}
 </style>

@@ -1,9 +1,13 @@
 <script lang="ts">
-    import { detect } from "@tonaljs/chord-detect";
-    import { get as getChord, reduced } from "@tonaljs/chord";
+    import type { ChordNotes } from "./chordUtils";
+    import { chordDetect, getProgression } from "./chordUtils";
     import type { Controller } from "../Controller";
-    import type { ChordHistoryEntry } from "./ChordHistoryEntry";
     import ChordHistoryItem from "./ChordHistoryItem.svelte";
+    import { Row, Col, Icon } from "svelte-chota";
+    import { mdiDelete, mdiArrowRight } from "@mdi/js";
+
+    import { fade, fly } from "svelte/transition";
+    import { flip } from "svelte/animate";
 
     export let controller: Controller;
 
@@ -11,70 +15,58 @@
 
     const { notes: controllerNotes } = controller;
 
-    let chord: ChordHistoryEntry;
+    let chordNotes: ChordNotes;
 
     let currentChordBankIndex: number = 0;
     let chordBankAdvance: boolean = true; // TODO false
     let chordBankHighlight: boolean = true;
 
-    $: notes = [...$controllerNotes];
-    $: {
-        chord = null;
+    let chordHistoryTimeout = null;
 
-        if (notes.length > 1) {
-            let chordNotes = [...notes];
-            for (let i = 0; i < chordNotes.length; i++) {
-                // Shift array to the left and try again
-                const firstNote = chordNotes.shift();
-                chordNotes.push(firstNote);
+    function addToChordHistory(chordNotes?) {
+        if (chordHistoryTimeout) {
+            clearTimeout(chordHistoryTimeout);
+        }
 
-                let chords = detect(chordNotes.map((n) => n.pc));
-
-                for (const currentChord of chords) {
-                    let parsedChord = getChord(currentChord);
-                    // https://github.com/tonaljs/tonal/issues/242
-                    if (
-                        !parsedChord.empty &&
-                        parsedChord.type !== "minor augmented"
-                    ) {
-                        chord = {
-                            chord: parsedChord,
-                            notes: chordNotes,
-                        };
-
-                        // Add to beginning of chordHistory and trim
-                        chordHistory.splice(0, 0, chord);
-                        chordHistory = chordHistory.slice(
-                            0,
-                            CHORD_HISTORY_LENGTH
-                        );
-
-                        // Advance chordBank if needed
-                        if (chordBankAdvance) {
-                            if (
-                                chordBank.length &&
-                                chordBank[currentChordBankIndex]?.chord
-                                    .symbol === chord.chord.symbol
-                            ) {
-                                advanceChordBank();
-                            }
-                        }
-
-                        break;
-                    }
-                }
-
-                if (chord) {
-                    break;
-                }
-            }
+        if (chordNotes) {
+            // Ensure notes are held for at least xyz ms
+            chordHistoryTimeout = setTimeout(() => {
+                // Add to beginning of chordHistory and trim
+                chordHistory.splice(0, 0, chordNotes);
+                chordHistory = chordHistory.slice(0, CHORD_HISTORY_LENGTH);
+                chordHistoryTimeout = null;
+            }, 250);
         }
     }
 
-    let chordHistory: ChordHistoryEntry[] = [];
-    let chordBank: ChordHistoryEntry[] = [];
+    $: notes = [...$controllerNotes];
+    $: {
+        chordNotes = notes.length > 1 ? chordDetect(notes) : null;
 
-    function addToChordBank(chord: ChordHistoryEntry) {
+        if (chordNotes) {
+            addToChordHistory(chordNotes);
+
+            // Advance chordBank if needed
+            if (
+                chordBankAdvance &&
+                chordBank.length &&
+                chordBank[currentChordBankIndex]?.chord.normalized ===
+                    chordNotes.chord.normalized
+            ) {
+                // Note: ignores octaves, note order(?)
+                advanceChordBank();
+            }
+        } else {
+            addToChordHistory();
+        }
+    }
+
+    // TODO make there a delay before adding a chord to history! if it changes before the delay is up, start over and don't add it!
+
+    let chordHistory: ChordNotes[] = [];
+    let chordBank: ChordNotes[] = [];
+
+    function addToChordBank(chord: ChordNotes) {
         setChordBankIndex(0);
         chordBank.push(chord);
         chordBank = chordBank;
@@ -83,6 +75,11 @@
         currentChordBankIndex = 0;
         chordBank.splice(index, 1);
         chordBank = chordBank;
+        setChordBankIndex(0);
+    }
+    function clearChordBank() {
+        currentChordBankIndex = 0;
+        chordBank = [];
         setChordBankIndex(0);
     }
 
@@ -105,57 +102,91 @@
         }
     }
 
-    function highlightChord(chord: ChordHistoryEntry) {
+    function highlightChord(chord: ChordNotes) {
         controller.highlightClear();
         controller.highlightNotes(chord.notes);
     }
+
+    function populateProgression(
+        root: string,
+        octave: number,
+        progression: string
+    ) {
+        clearChordBank();
+
+        for (const chordNotes of getProgression(root, octave, progression)) {
+            addToChordBank(chordNotes);
+        }
+    }
 </script>
 
-<main>
-    {#if chord}
-        Chord: {chord.chord.name}
-    {/if}
+<div>
+    <Row>
+        <Col>
+            <h2>
+                Chord: {chordNotes?.chord.name || "none"}
+            </h2>
 
-    <button on:click={() => controller.highlightClear()}>clear</button>
+            <button
+                on:click={() => populateProgression("C", 3, "IMaj7 IIm7 V7")}
+                >Progression</button
+            >
+            <button on:click={() => controller.highlightClear()}>Clear</button>
+        </Col>
+    </Row>
 
-    <ul>
-        {#each chordHistory as chord}
-            <li>
-                <ChordHistoryItem
-                    {chord}
-                    on:click={() => highlightChord(chord)}
-                >
-                    <span slot="action">
-                        <button on:click={() => addToChordBank(chord)}>+</button
+    <Row>
+        <Col>
+            <div>
+                <h4>Chord history</h4>
+                {#each chordHistory as chord, i (chord)}
+                    <div animate:flip in:fade out:fly={{ x: 100 }}>
+                        <ChordHistoryItem
+                            {chord}
+                            on:click={(e) => {
+                                e.stopPropagation();
+                                highlightChord(chord);
+                            }}
                         >
-                    </span>
-                </ChordHistoryItem>
-            </li>
-        {/each}
-    </ul>
-
-    <hr />
-
-    <ul>
-        {#each chordBank as chord, i}
-            <li>
-                <ChordHistoryItem
-                    {chord}
-                    active={i === currentChordBankIndex}
-                    on:click={() => setChordBankIndex(i)}
-                >
-                    <span slot="action">
-                        <button on:click={() => removeFromChordBank(i)}
-                            >-</button
+                            <button
+                                slot="action"
+                                on:click={() => addToChordBank(chord)}
+                                ><Icon
+                                    src={mdiArrowRight}
+                                    size="24px"
+                                /></button
+                            >
+                        </ChordHistoryItem>
+                    </div>
+                {/each}
+            </div>
+        </Col>
+        <Col>
+            <div>
+                <h4>Chord playlist</h4>
+                {#each chordBank as chord, i (chord)}
+                    <div animate:flip in:fade out:fly={{ x: 100 }}>
+                        <ChordHistoryItem
+                            {chord}
+                            active={i === currentChordBankIndex}
+                            on:click={() => setChordBankIndex(i)}
                         >
-                    </span>
-                </ChordHistoryItem>
-            </li>
-        {/each}
+                            <button
+                                slot="action"
+                                on:click={(e) => {
+                                    e.stopPropagation();
+                                    removeFromChordBank(i);
+                                }}><Icon src={mdiDelete} size="24px" /></button
+                            >
+                        </ChordHistoryItem>
+                    </div>
+                {/each}
 
-        <!--[ ] Advance and highlight-->
-    </ul>
-</main>
+                <!--[ ] Advance and highlight-->
+            </div></Col
+        >
+    </Row>
+</div>
 
 <style>
 </style>

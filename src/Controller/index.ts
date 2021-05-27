@@ -115,6 +115,8 @@ export abstract class Controller {
 
       this.pads[padNumber].setNote(note)
     }
+
+    this.draw()
   }
 
   on(note: Note, velocity: number) {
@@ -161,6 +163,8 @@ export abstract class Controller {
         this.off(pad.note)
       })
     }
+
+    this.draw()
   }
 
   setSynth(synth: Synth) {
@@ -179,6 +183,12 @@ export abstract class Controller {
   highlightClear(): void {
     for (const pad of Object.values(this.pads)) {
       pad.unhighlight()
+    }
+  }
+
+  draw(): void {
+    for (const pad of Object.values(this.pads)) {
+      pad.draw()
     }
   }
 

@@ -22,7 +22,8 @@
     .push2 {
         display: inline-block;
         background: #000;
-        padding: 18px;
-        border-radius: 6px;
+        padding: 1em;
+        border-radius: 0.25em;
+        box-shadow: var(--box-shadow-base);
     }
 </style>

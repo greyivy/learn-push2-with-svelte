@@ -1,6 +1,6 @@
-import AppLoader from './AppLoader.svelte'
+import Wrapper from './Wrapper.svelte'
 
-const app = new AppLoader({
+const app = new Wrapper({
   target: document.body
 })
 

@@ -112,7 +112,7 @@ class Pad {
    * @private
    * @memberof Pad
    */
-  private draw() {
+  draw() {
     if (this.controller.output) {
       if (this.pressed) {
         this.controller.output.playNote(this.padNumber, 'all', {
