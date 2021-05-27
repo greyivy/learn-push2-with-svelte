@@ -1,6 +1,30 @@
 # Learn Push 2 with Svelte (and WebMIDI)
 
-Currently early in development!
+**🌸 Currently very early in development! Feel free to contribute <3 🌸**
+
+Learn chords, scales, and music theory on the Push 2, right inside your web browser! This started as a project to test out Svelte but it turns out, it's really useful 🤷‍♀️
+
+## Features
+- Highlights chords and scales onscreen and on your controller
+- Labels the information about the pads on your controller onscreen
+- Mirrors the physical controller onscreen in real time
+- Helps you practice chord progressions (think Guitar Hero)
+- Easy to add other controllers (e.g. Launchpad), layout generators, and sounds because TypeScript is awesome!
+- Super performant thanks in part to to [Svelte's stores implementation](https://svelte.dev/tutorial/writable-stores) and its easy nesting
+- A few sounds and a TON of scales already
+
+Thanks to @stordahl for introducing me to Svelte!
+
+## Roadmap
+- Chord, chord progression bank
+- UI improvements
+
+### Future ideas
+- Song bank
+- Drumming practice
+- Real-time remote jam sessions through WebRTC!?
+- ???
+- No profit (donate to mutual aid or a trans organization near you instead?)
 
 ---
 
