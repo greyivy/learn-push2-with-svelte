@@ -2,8 +2,6 @@
 	import { Modal, Button, Card, Nav } from "svelte-chota";
 	import { mdiCog } from "@mdi/js";
 
-	import DevicePicker from "./DevicePicker.svelte";
-
 	import type { LayoutGenerator } from "./LayoutGenerator";
 	import type { Controller } from "./Controller";
 	import type { Synth } from "./Synth";
@@ -23,7 +21,6 @@
 		rootOctave,
 	} from "./configurationStore";
 	import Config from "./Config.svelte";
-	import { xlink_attr } from "svelte/internal";
 
 	let controller: Controller;
 	let synth: Synth;
@@ -46,6 +43,16 @@
 	}
 
 	$: {
+		layoutGenerator = $layoutGeneratorConfiguration.getInstance(
+			note(`${$rootLetter}${$rootOctave}`) as Note
+		);
+
+		if (controller) {
+			controller.setLayoutGenerator(layoutGenerator, $scaleName);
+		}
+	}
+
+	$: {
 		if (controller) {
 			controller.setDevices($inputId, $outputId);
 		}
@@ -56,16 +63,6 @@
 
 		if (controller) {
 			controller.setSynth(synth);
-		}
-	}
-
-	$: {
-		layoutGenerator = $layoutGeneratorConfiguration.getInstance(
-			note(`${$rootLetter}${$rootOctave}`) as Note
-		);
-
-		if (controller) {
-			controller.setLayoutGenerator(layoutGenerator, $scaleName);
 		}
 	}
 
@@ -94,9 +91,9 @@
 			on:click={() => (configModalOpen = true)}>Settings</Button
 		>
 
-		<a slot="center" href="/" class="brand">LOGO</a>
+		<a slot="center" href="/" class="brand">{$rootLetter}{$rootOctave}</a>
 
-		<a slot="right" href="/">Link 3</a>
+		<a slot="right" href="/" />
 	</Nav>
 
 	<main>

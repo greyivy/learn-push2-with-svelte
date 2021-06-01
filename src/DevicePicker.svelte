@@ -1,37 +1,20 @@
 <script lang="ts">
-    import WebMidi, { Input, Output } from "webmidi";
-    import { onMount } from "svelte";
+    import webmidi, { Input, Output } from "webmidi";
 
     export let type: "input" | "output";
     export let value: string = null;
 
     type device = Input | Output;
 
-    let devices: device[] = type === "input" ? WebMidi.inputs : WebMidi.outputs;
-    WebMidi.addListener("connected", () => {
-        devices = type === "input" ? WebMidi.inputs : WebMidi.outputs;
+    let devices: device[] = type === "input" ? webmidi.inputs : webmidi.outputs;
+    webmidi.addListener("connected", () => {
+        devices = type === "input" ? webmidi.inputs : webmidi.outputs;
     });
-    WebMidi.addListener("disconnected", () => {
-        devices = type === "input" ? WebMidi.inputs : WebMidi.outputs;
+    webmidi.addListener("disconnected", () => {
+        devices = type === "input" ? webmidi.inputs : webmidi.outputs;
 
         if (!devices.find((d) => d.id === value)) {
             value = null;
-        }
-    });
-
-    const localStorageKey: string = `device-${type}`;
-
-    $: {
-        if (value) {
-            localStorage.setItem(localStorageKey, value);
-        }
-    }
-
-    onMount(async () => {
-        const storedValue: string = localStorage.getItem(localStorageKey);
-
-        if (storedValue && devices.find((d) => d.id === storedValue)) {
-            value = storedValue;
         }
     });
 </script>

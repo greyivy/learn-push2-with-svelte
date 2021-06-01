@@ -7,7 +7,6 @@ import sveltePreprocess from 'svelte-preprocess'
 import typescript from '@rollup/plugin-typescript'
 import css from 'rollup-plugin-css-only'
 import { string } from 'rollup-plugin-string'
-import webWorkerLoader from 'rollup-plugin-web-worker-loader'
 
 const production = !process.env.ROLLUP_WATCH
 

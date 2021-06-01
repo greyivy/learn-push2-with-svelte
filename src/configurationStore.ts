@@ -14,10 +14,25 @@ import Push2Controller from './Controller/Push2/Push2Controller';
 import { Scale } from "@tonaljs/tonal";
 import type { SynthConfiguration } from "./Synth";
 import SynthPiano from './Synth/SynthPiano';
+import webmidi from "webmidi";
 
-// TODO move localStorage stuff here
 export const inputId: Writable<string> = writable(null);
 export const outputId: Writable<string> = writable(null);
+
+export function initializeDeviceConfiguration() {
+    const storedInputId = localStorage.getItem('inputId')
+    const storedOutputId = localStorage.getItem('outputId')
+
+    if (webmidi.inputs.find(i => i.id === storedInputId)) {
+        inputId.set(storedInputId)
+    }
+    if (webmidi.outputs.find(o => o.id === storedOutputId)) {
+        outputId.set(storedOutputId)
+    }
+
+    inputId.subscribe(value => localStorage.setItem('inputId', value))
+    outputId.subscribe(value => localStorage.setItem('outputId', value))
+}
 
 export const controllerConfigurations: ControllerConfiguration[] = [
     Push2Controller,

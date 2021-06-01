@@ -2,12 +2,27 @@
     import type { ChordNotes } from "./chordUtils";
     import { chordDetect, getProgression } from "./chordUtils";
     import type { Controller } from "../Controller";
+
+    import Progressions from "./Progressions.svelte";
+
     import ChordHistoryItem from "./ChordHistoryItem.svelte";
     import { Row, Col, Icon } from "svelte-chota";
     import { mdiDelete, mdiArrowRight } from "@mdi/js";
 
     import { fade, fly } from "svelte/transition";
     import { flip } from "svelte/animate";
+    import { chord } from "./chordStore";
+
+    import {
+        inputId,
+        outputId,
+        controllerConfiguration,
+        synthConfiguration,
+        layoutGeneratorConfiguration,
+        scaleName,
+        rootLetter,
+        rootOctave,
+    } from "../configurationStore";
 
     export let controller: Controller;
 
@@ -42,6 +57,8 @@
     $: notes = [...$controllerNotes];
     $: {
         chordNotes = notes.length > 1 ? chordDetect(notes) : null;
+
+        chord.set(chordNotes);
 
         if (chordNotes) {
             addToChordHistory(chordNotes);
@@ -114,7 +131,11 @@
     ) {
         clearChordBank();
 
-        for (const chordNotes of getProgression(root, octave, progression)) {
+        for (const chordNotes of getProgression(
+            root,
+            $rootOctave,
+            progression
+        )) {
             addToChordBank(chordNotes);
         }
     }
@@ -127,10 +148,11 @@
                 Chord: {chordNotes?.chord.name || "none"}
             </h2>
 
-            <button
-                on:click={() => populateProgression("C", 3, "IMaj7 IIm7 V7")}
-                >Progression</button
-            >
+            <Progressions
+                onSelect={(root, progression) =>
+                    populateProgression(root, 3, progression)}
+            />
+
             <button on:click={() => controller.highlightClear()}>Clear</button>
         </Col>
     </Row>

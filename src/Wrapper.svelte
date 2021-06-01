@@ -4,18 +4,21 @@
     import "chota";
     import "./variables.css";
 
-    import WebMidi from "webmidi";
+    import webmidi from "webmidi";
 
     import App from "./App.svelte";
+    import { initializeDeviceConfiguration } from "./configurationStore";
 
     let initialized: boolean;
 
     // Initialize WebMidi
     onMount(() => {
-        WebMidi.enable((e) => {
+        webmidi.enable((e) => {
             if (e) {
                 alert(`WebMidi could not be enabled: ${e.message}`);
             } else {
+                initializeDeviceConfiguration();
+
                 initialized = true;
             }
         });

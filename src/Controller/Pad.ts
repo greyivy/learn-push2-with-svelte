@@ -1,6 +1,6 @@
 import { writable, Writable } from 'svelte/store'
 import { getColorVelocity, PadColor, PadNoteColorCollection } from './PadColor'
-import type { Controller } from './Controller'
+import type { Controller } from './'
 import type { Note } from '@tonaljs/core'
 
 export interface PadNote extends Note {

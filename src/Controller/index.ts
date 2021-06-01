@@ -2,12 +2,18 @@ import { Writable, writable } from 'svelte/store'
 import type { Note } from '@tonaljs/core'
 import type { Scale } from "@tonaljs/scale";
 import { get as getScale } from "@tonaljs/scale";
-import WebMidi, { Input, Output } from 'webmidi'
-import { Pad, PadNote } from '../Pad'
-import type { PadColor, PadColorCollection, PadNoteColorCollection } from '../PadColor'
+import webmidi, { Input, InputEventControlchange, Output } from 'webmidi'
+import { Pad, PadNote } from './Pad'
+import type { PadColor, PadColorCollection, PadNoteColorCollection } from './PadColor'
 import type { Synth } from '../Synth'
 import type { LayoutGenerator } from '../LayoutGenerator'
 import type { SvelteComponent } from 'svelte'
+import { rootOctave } from '../configurationStore';
+import { OCTAVES } from '../helpers';
+import { Control, ControlType } from './Control';
+
+const MAX_OCTAVE = Math.max(...OCTAVES)
+const MIN_OCTAVE = Math.min(...OCTAVES)
 
 export type ControllerConfiguration = typeof Controller & { getMeta(): ControllerMeta, getInstance(): Controller }
 
@@ -21,20 +27,36 @@ type PadCollection = {
   [padNumber: number]: Pad
 }
 
+type ControlCollection = {
+  [controlNumber: number]: Control
+}
+
+export type ControlDefinition = {
+  controlNumber: number,
+  controlType: ControlType,
+  initialColorVelocity?: number
+}
+
 export abstract class Controller {
   readonly rows: number;
   readonly columns: number;
   readonly offset: number;
 
+  readonly eventTarget: EventTarget;
+  readonly addEventListener: (type: ControlType, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions) => void;
+  readonly removeEventListener: (type: ControlType, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions) => void;
+  private readonly dispatchEvent: (event: Event) => boolean;
+
   scaleName: string;
 
-  input: Input | false;
-  output: Output | false;
+  input: Input;
+  output: Output;
   synth: Synth;
 
   private readonly noteState: Set<Note>;
   readonly notes: Writable<Set<Note>>;
-  readonly pads: PadCollection;
+  readonly pads: PadCollection = {};
+  readonly controls: ControlCollection = {};
 
   /**
    * Creates an instance of Controller.
@@ -44,16 +66,23 @@ export abstract class Controller {
   constructor(
     rows: number,
     columns: number,
-    offset: number
+    offset: number,
+    controls: ControlDefinition[]
   ) {
     this.rows = rows
     this.columns = columns
     this.offset = offset
 
+    this.eventTarget = document.createTextNode(null)
+    this.addEventListener = this.eventTarget.addEventListener.bind(this.eventTarget)
+    this.removeEventListener = this.eventTarget.removeEventListener.bind(this.eventTarget)
+    this.dispatchEvent = this.eventTarget.dispatchEvent.bind(this.eventTarget)
+
+    this.bindControlEvents()
+
     this.noteState = new Set()
     this.notes = writable(new Set())
 
-    this.pads = {}
     for (let i = 0; i < rows * columns; i++) {
       const padNumber = i + offset
 
@@ -61,6 +90,10 @@ export abstract class Controller {
         this,
         padNumber
       )
+    }
+
+    for (const control of controls) {
+      this.controls[control.controlNumber] = new Control(this, control.controlNumber, control.controlType, control.initialColorVelocity)
     }
   }
 
@@ -119,7 +152,7 @@ export abstract class Controller {
     this.draw()
   }
 
-  on(note: Note, velocity: number) {
+  noteOn(note: Note, velocity: number) {
     if (!this.noteState.has(note)) {
 
       this.noteState.add(note)
@@ -132,7 +165,7 @@ export abstract class Controller {
       this.synth.down(note, velocity)
     }
   }
-  off(note: Note) {
+  noteOff(note: Note) {
     if (this.noteState.has(note)) {
       this.noteState.delete(note)
       this.notes.set(this.noteState)
@@ -150,18 +183,61 @@ export abstract class Controller {
       this.input.removeListener()
     }
 
-    this.input = WebMidi.getInputById(inputId)
-    this.output = WebMidi.getOutputById(outputId)
+    this.input = webmidi.getInputById(inputId) as Input
+    this.output = webmidi.getOutputById(outputId) as Output
 
-    if (this.input) {
+    if (this.input && this.output) {
       this.input.addListener('noteon', 'all', e => {
         const pad = this.pads[e.note.number]
-        this.on(pad.note, e.velocity)
+        this.noteOn(pad.note, e.velocity)
       })
       this.input.addListener('noteoff', 'all', e => {
         const pad = this.pads[e.note.number]
-        this.off(pad.note)
+        this.noteOff(pad.note)
       })
+
+      this.input.addListener('controlchange', "all",
+        (e) => {
+          if (e.value > 0) {
+            // Pad down
+            const controlNumber = e.controller.number
+
+            if (this.controls[controlNumber]) {
+              this.dispatchEvent(new CustomEvent<InputEventControlchange>(this.controls[controlNumber].controlType, {
+                detail: e
+              }))
+            }
+          } else {
+            // Pad up
+          }
+        }
+      );
+
+      /* 
+      this.input.addListener('pitchbend', 'all',
+        function (e) {
+          console.log("Received 'pitchbend' message.", e);
+        }
+      );
+      this.input.addListener('programchange', "all",
+        function (e) {
+          console.log("Received 'programchange' message.", e);
+        }
+      );
+      this.input.addListener('nrpn', "all",
+        function (e) {
+          if (e.controller.type === 'entry') {
+            console.log("Received 'nrpn' 'entry' message.", e);
+          }
+          if (e.controller.type === 'decrement') {
+            console.log("Received 'nrpn' 'decrement' message.", e);
+          }
+          if (e.controller.type === 'increment') {
+            console.log("Received 'nrpn' 'increment' message.", e);
+          }
+          console.log("message value: " + e.controller.value + ".", e);
+        }
+      );*/
     }
 
     this.draw()
@@ -169,6 +245,33 @@ export abstract class Controller {
 
   setSynth(synth: Synth) {
     this.synth = synth
+  }
+
+  getControl(controlType: ControlType) {
+    return Object.values(this.controls).find(control => control.controlType === controlType)
+  }
+
+  private bindControlEvents() {
+    this.addEventListener('octaveUp', () => rootOctave.update(o => o < MAX_OCTAVE ? o + 1 : o)) // Octave up
+    this.addEventListener('octaveDown', () => rootOctave.update(o => o > MIN_OCTAVE ? o - 1 : o)) // Octave down
+    // Illuminate octave controls
+    rootOctave.subscribe(octave => {
+      const controlOctaveUp = this.getControl('octaveUp')
+      const controlOctaveDown = this.getControl('octaveDown')
+
+      if (controlOctaveUp && controlOctaveDown) {
+        if (octave === MAX_OCTAVE) {
+          controlOctaveUp.setOff()
+        } else {
+          controlOctaveUp.setOn()
+        }
+        if (octave === MIN_OCTAVE) {
+          controlOctaveDown.setOff()
+        } else {
+          controlOctaveDown.setOn()
+        }
+      }
+    })
   }
 
   highlightNotes(notes: Note[]): void {
@@ -189,6 +292,9 @@ export abstract class Controller {
   draw(): void {
     for (const pad of Object.values(this.pads)) {
       pad.draw()
+    }
+    for (const control of Object.values(this.controls)) {
+      control.draw()
     }
   }
 

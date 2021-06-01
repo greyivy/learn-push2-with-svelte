@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { Pad } from "../../Pad";
+    import type { Pad } from "../Pad";
 
     const DEFAULT_NOTE_COLOR: string = "rgb(0,0,0)";
     const DEFAULT_NOTE_BACKGROUND_COLOR: string = "rgb(200,200,200)";
@@ -27,17 +27,17 @@
     class:isHighlighted
     class:isRoot={note.noteNumber === 1}
     class:isScale={note.noteNumber >= 1}
-    on:mousedown={() => controller.on(pad.note, 1)}
-    on:mouseup={() => controller.off(pad.note)}
+    on:mousedown={() => controller.noteOn(pad.note, 1)}
+    on:mouseup={() => controller.noteOff(pad.note)}
     on:mouseover={(e) => {
         if (e.buttons) {
-            controller.on(pad.note, 1);
+            controller.noteOn(pad.note, 1);
         }
         pad.mouseover();
     }}
     on:mouseout={(e) => {
         if (e.buttons) {
-            controller.off(pad.note);
+            controller.noteOff(pad.note);
         }
         pad.mouseout();
     }}

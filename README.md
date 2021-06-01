@@ -1,6 +1,12 @@
 # Learn Push 2 with Svelte (and WebMIDI)
 
+*Now with a WebUSB-powered Push 2 display driver!*
+
 Currently early in development!
+
+## Improvements
+- [ ] Rewrite display driver in Rust w/ WebASM
+- [ ] Configure a code formatter
 
 ---
 
