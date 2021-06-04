@@ -1,19 +1,17 @@
 import { Writable, writable } from 'svelte/store'
-import type { Note } from '@tonaljs/core'
+import { note, Note } from '@tonaljs/core'
 import type { Scale } from "@tonaljs/scale";
 import { get as getScale } from "@tonaljs/scale";
 import webmidi, { Input, InputEventControlchange, Output } from 'webmidi'
 import { Pad, PadNote } from './Pad'
-import type { PadColor, PadColorCollection, PadNoteColorCollection } from './PadColor'
+import type { VelocityColor, VelocityColorCollection, NoteNumberVelocityColorCollection, ControlVelocityColorCollection } from './VelocityColor'
 import type { Synth } from '../Synth'
+import { enharmonic } from "@tonaljs/note";
 import type { LayoutGenerator } from '../LayoutGenerator'
 import type { SvelteComponent } from 'svelte'
-import { rootOctave } from '../configurationStore';
-import { OCTAVES } from '../helpers';
-import { Control, ControlType } from './Control';
-
-const MAX_OCTAVE = Math.max(...OCTAVES)
-const MIN_OCTAVE = Math.min(...OCTAVES)
+import { layoutGeneratorConfiguration, layoutGeneratorConfigurations, rootLetter, rootOctave, scaleName, scaleNames, synthConfiguration, synthConfigurations } from '../configurationStore';
+import { MAX_OCTAVE, MIN_OCTAVE, NOTES, OCTAVES } from '../helpers';
+import { Control, ControlDefinition, ControlType } from './Control';
 
 export type ControllerConfiguration = typeof Controller & { getMeta(): ControllerMeta, getInstance(): Controller }
 
@@ -23,18 +21,29 @@ export type ControllerMeta = {
   component: typeof SvelteComponent;
 }
 
-type PadCollection = {
+export type PadCollection = {
   [padNumber: number]: Pad
 }
 
-type ControlCollection = {
+export type ControlCollection = {
   [controlNumber: number]: Control
 }
 
-export type ControlDefinition = {
-  controlNumber: number,
-  controlType: ControlType,
-  initialColorVelocity?: number
+export type EventType = "layoutChange" | ControlType
+
+export function getNext(value: any, values: any[]) {
+  if (values.indexOf(value) === values.length - 1) {
+    return values[0]
+  } else {
+    return values[values.indexOf(value) + 1]
+  }
+}
+export function getPrevious(value: any, values: any[]) {
+  if (values.indexOf(value) === 0) {
+    return values[values.length - 1]
+  } else {
+    return values[values.indexOf(value) - 1]
+  }
 }
 
 export abstract class Controller {
@@ -43,8 +52,8 @@ export abstract class Controller {
   readonly offset: number;
 
   readonly eventTarget: EventTarget;
-  readonly addEventListener: (type: ControlType, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions) => void;
-  readonly removeEventListener: (type: ControlType, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions) => void;
+  readonly addEventListener: (type: EventType, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions) => void;
+  readonly removeEventListener: (type: EventType, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions) => void;
   private readonly dispatchEvent: (event: Event) => boolean;
 
   scaleName: string;
@@ -53,8 +62,15 @@ export abstract class Controller {
   output: Output;
   synth: Synth;
 
-  private readonly noteState: Set<Note>;
-  readonly notes: Writable<Set<Note>>;
+  private readonly notesPressedState: Note[] = [];
+  readonly notesPressed: Writable<Note[]> = writable([]);
+
+  private notesHighlightedState: Note[] = [];
+  readonly notesHighlighted: Writable<Note[]> = writable([]);
+
+  private notesHoveredState: Note[] = [];
+  readonly notesHovered: Writable<Note[]> = writable([]);
+
   readonly pads: PadCollection = {};
   readonly controls: ControlCollection = {};
 
@@ -80,9 +96,6 @@ export abstract class Controller {
 
     this.bindControlEvents()
 
-    this.noteState = new Set()
-    this.notes = writable(new Set())
-
     for (let i = 0; i < rows * columns; i++) {
       const padNumber = i + offset
 
@@ -93,21 +106,29 @@ export abstract class Controller {
     }
 
     for (const control of controls) {
-      this.controls[control.controlNumber] = new Control(this, control.controlNumber, control.controlType, control.initialColorVelocity)
+      this.controls[control.controlNumber] = new Control(this, control)
     }
   }
 
-  abstract padColors: PadColorCollection;
-  abstract defaultPadNoteColors: PadNoteColorCollection;
-  abstract defaultPadPressedColor: PadColor;
-  abstract defaultPadHighlightColor: PadColor;
-  abstract defaultPadHoverColor: PadColor;
+  abstract colors: VelocityColorCollection;
+  abstract noteColors: NoteNumberVelocityColorCollection;
+  abstract pressedColor: VelocityColor;
+  abstract highlightColor: VelocityColor;
+  abstract hoverColor: VelocityColor;
+  abstract controlColors: ControlVelocityColorCollection;
+
+  get padCount(): number {
+    return this.rows * this.columns
+  }
 
   getPadsByNote(note: Note): Pad[] {
-    return Object.values(this.pads).filter(pad => pad.note === note)
+    return Object.values(this.pads).filter(pad => pad.getNote() === note)
   }
   getPadByIndex(index: number): Pad {
     return this.pads[this.offset + index]
+  }
+  getPadNotes(): Note[] {
+    return Object.values(this.pads).map(pad => pad.getNote())
   }
 
   // Returns 3D array of pad numbers
@@ -129,52 +150,137 @@ export abstract class Controller {
     return layout
   }
 
+  // Maps pad numbers to notes
   setLayoutGenerator(layoutGenerator: LayoutGenerator, scaleName) {
     this.scaleName = scaleName
 
     const layout = layoutGenerator.generate(this)
 
     // Compute scale
-    const scales: { [octave: number]: Scale } = {}
-    for (let i = 0; i < this.rows * this.columns; i++) {
+    const scale = getScale(`${layoutGenerator.root.pc}0 ${this.scaleName}`)
+    const scaleNoteLetters = scale.notes.map(noteName => {
+      const noteLetter = note(noteName).pc
+
+      if (NOTES.includes(noteLetter)) {
+        return noteLetter
+      } else {
+        // If the note isn't in our note list, use the enharmonic (which should be)
+        return note(enharmonic(noteName)).pc
+      }
+    })
+
+    for (let i = 0; i < this.padCount; i++) {
       const padNumber = i + this.offset
 
       const note = layout[padNumber] as PadNote
-      if (!scales[note.oct]) {
-        scales[note.oct] = getScale(`${layoutGenerator.root.pc}${note.oct} ${this.scaleName}`)
-      }
 
-      note.noteNumber = scales[note.oct].notes.indexOf(note.name) + 1
+      note.noteNumber = scaleNoteLetters.indexOf(note.pc) + 1
 
       this.pads[padNumber].setNote(note)
     }
 
     this.draw()
+
+    this.dispatchEvent(new CustomEvent('layoutChange'))
   }
 
   noteOn(note: Note, velocity: number) {
-    if (!this.noteState.has(note)) {
+    if (!this.notesPressedState.includes(note)) {
+      this.notesPressedState.push(note)
+      this.notesPressed.set(this.notesPressedState)
 
-      this.noteState.add(note)
-      this.notes.set(this.noteState)
-
-      const pads = this.getPadsByNote(note)
-      for (const pad of pads) {
-        pad.on()
-      }
       this.synth.down(note, velocity)
     }
   }
   noteOff(note: Note) {
-    if (this.noteState.has(note)) {
-      this.noteState.delete(note)
-      this.notes.set(this.noteState)
+    if (this.notesPressedState.includes(note)) {
+      this.notesPressedState.splice(this.notesPressedState.indexOf(note), 1)
+      this.notesPressed.set(this.notesPressedState)
 
-      const pads = this.getPadsByNote(note)
-      for (const pad of pads) {
-        pad.off()
-      }
       this.synth.up(note)
+    }
+  }
+
+  hoverNoteOn(note: Note) {
+    if (!this.notesHoveredState.includes(note)) {
+      this.notesHoveredState.push(note)
+      this.notesHovered.set(this.notesHoveredState)
+    }
+  }
+  hoverNoteOff(note: Note) {
+    if (this.notesHoveredState.includes(note)) {
+      this.notesHoveredState.splice(this.notesHoveredState.indexOf(note), 1)
+      this.notesHovered.set(this.notesHoveredState)
+    }
+  }
+
+  highlightNotes(notes: Note[]): void {
+    this.notesHighlightedState = notes
+    this.notesHighlighted.set(this.notesHighlightedState)
+  }
+  highlightClear(): void {
+    this.notesHighlightedState = []
+    this.notesHighlighted.set(this.notesHighlightedState)
+  }
+
+  getControl(controlType: ControlType) {
+    return Object.values(this.controls).find(control => control.controlType === controlType)
+  }
+
+  private bindControlEvents() {
+    this.addEventListener('rootLetter', () => {
+      rootLetter.update(rootLetter => getNext(rootLetter, NOTES))
+    })
+
+    this.addEventListener('rootOctave', () => rootOctave.update(rootOctave => getNext(rootOctave, OCTAVES)))
+    this.addEventListener('rootOctaveUp', () => rootOctave.update(rootOctave => rootOctave < MAX_OCTAVE ? rootOctave + 1 : rootOctave))
+    this.addEventListener('rootOctaveDown', () => rootOctave.update(rootOctave => rootOctave > MIN_OCTAVE ? rootOctave - 1 : rootOctave))
+
+    // Illuminate octave up/down controls
+    rootOctave.subscribe(octave => {
+      // Reset pressed, hovered state
+      for (const note of this.notesPressedState) {
+        this.noteOff(note)
+      }
+      this.notesHoveredState = []
+      this.notesPressed.set(this.notesPressedState)
+
+      const controlOctaveUp = this.getControl('rootOctaveUp')
+      const controlOctaveDown = this.getControl('rootOctaveDown')
+
+      if (controlOctaveUp && controlOctaveDown) {
+        if (octave === MAX_OCTAVE) {
+          controlOctaveUp.setStateOff()
+        } else {
+          controlOctaveUp.setStateOn()
+        }
+        if (octave === MIN_OCTAVE) {
+          controlOctaveDown.setStateOff()
+        } else {
+          controlOctaveDown.setStateOn()
+        }
+      }
+    })
+
+    this.addEventListener('scaleName', () => {
+      scaleName.update(scaleName => getNext(scaleName, scaleNames))
+    })
+
+    this.addEventListener('layoutGeneratorConfiguration', () => {
+      layoutGeneratorConfiguration.update(layoutGeneratorConfiguration => getNext(layoutGeneratorConfiguration, layoutGeneratorConfigurations))
+    })
+
+    this.addEventListener('synthConfiguration', () => {
+      synthConfiguration.update(synthConfiguration => getNext(synthConfiguration, synthConfigurations))
+    })
+  }
+
+  draw(): void {
+    for (const pad of Object.values(this.pads)) {
+      pad.draw()
+    }
+    for (const control of Object.values(this.controls)) {
+      control.draw()
     }
   }
 
@@ -189,29 +295,32 @@ export abstract class Controller {
     if (this.input && this.output) {
       this.input.addListener('noteon', 'all', e => {
         const pad = this.pads[e.note.number]
-        this.noteOn(pad.note, e.velocity)
+        if (pad) {
+          this.noteOn(pad.getNote(), e.velocity)
+        }
       })
       this.input.addListener('noteoff', 'all', e => {
         const pad = this.pads[e.note.number]
-        this.noteOff(pad.note)
+        if (pad) {
+          this.noteOff(pad.getNote())
+        }
       })
 
-      this.input.addListener('controlchange', "all",
-        (e) => {
-          if (e.value > 0) {
-            // Pad down
-            const controlNumber = e.controller.number
-
-            if (this.controls[controlNumber]) {
-              this.dispatchEvent(new CustomEvent<InputEventControlchange>(this.controls[controlNumber].controlType, {
-                detail: e
-              }))
-            }
-          } else {
-            // Pad up
+      this.input.addListener('controlchange', "all", e => {
+        const control = this.controls[e.controller.number]
+        if (control) {
+          if (control.fireAllEvents || e.value > 0) {
+            this.dispatchEvent(new CustomEvent<{ event: InputEventControlchange, control: Control }>(control.controlType, {
+              detail: {
+                event: e,
+                control
+              }
+            }))
           }
+        } else {
+          console.warn('Control not bound', e)
         }
-      );
+      });
 
       /* 
       this.input.addListener('pitchbend', 'all',
@@ -245,57 +354,6 @@ export abstract class Controller {
 
   setSynth(synth: Synth) {
     this.synth = synth
-  }
-
-  getControl(controlType: ControlType) {
-    return Object.values(this.controls).find(control => control.controlType === controlType)
-  }
-
-  private bindControlEvents() {
-    this.addEventListener('octaveUp', () => rootOctave.update(o => o < MAX_OCTAVE ? o + 1 : o)) // Octave up
-    this.addEventListener('octaveDown', () => rootOctave.update(o => o > MIN_OCTAVE ? o - 1 : o)) // Octave down
-    // Illuminate octave controls
-    rootOctave.subscribe(octave => {
-      const controlOctaveUp = this.getControl('octaveUp')
-      const controlOctaveDown = this.getControl('octaveDown')
-
-      if (controlOctaveUp && controlOctaveDown) {
-        if (octave === MAX_OCTAVE) {
-          controlOctaveUp.setOff()
-        } else {
-          controlOctaveUp.setOn()
-        }
-        if (octave === MIN_OCTAVE) {
-          controlOctaveDown.setOff()
-        } else {
-          controlOctaveDown.setOn()
-        }
-      }
-    })
-  }
-
-  highlightNotes(notes: Note[]): void {
-    for (const note of notes) {
-      const pads = this.getPadsByNote(note)
-      for (const pad of pads) {
-        pad.highlight()
-      }
-    }
-  }
-
-  highlightClear(): void {
-    for (const pad of Object.values(this.pads)) {
-      pad.unhighlight()
-    }
-  }
-
-  draw(): void {
-    for (const pad of Object.values(this.pads)) {
-      pad.draw()
-    }
-    for (const control of Object.values(this.controls)) {
-      control.draw()
-    }
   }
 
   destroy(): void {

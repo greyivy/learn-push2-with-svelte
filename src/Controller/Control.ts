@@ -1,46 +1,70 @@
+import { writable, Writable } from "svelte/store";
 import type { Controller } from ".";
+import type { VelocityColor } from "./VelocityColor";
 
-export type ControlType = "octaveUp" | "octaveDown" | string
+export type ControlType =
+    "rootLetter" | "rootOctave" | "rootOctaveUp" | "rootOctaveDown" |
+    "scaleName" | "layoutGeneratorConfiguration" | "synthConfiguration" |
+    string
 
-const OFF_COLOR_VELOCITY = 0
-const DEFAULT_COLOR_VELOCITY = 127
+export type ControlState = "on" | "off" | string
+
+export type ControlDefinition = {
+    controlNumber: number,
+    controlType: ControlType,
+    initialColor?: VelocityColor,
+    fireAllEvents?: boolean // Whether to fire events for when the velocity is 0
+}
 
 export class Control {
     readonly controller: Controller;
     readonly controlNumber: number;
     readonly controlType: ControlType;
+    fireAllEvents: boolean;
 
-    colorVelocity: number;
-    private previousColorVelocity: number;
+    overrideColor: VelocityColor;
 
-    constructor(controller: Controller, controlNumber: number, controlType: ControlType, initialColorVelocity?: number) {
+    private stateState: ControlState = "on";
+    readonly state: Writable<ControlState> = writable(this.stateState);
+
+    constructor(controller: Controller, definition: ControlDefinition) {
+        const { controlNumber, controlType, initialColor: overrideColor, fireAllEvents } = definition
+
         this.controller = controller
+
         this.controlNumber = controlNumber
         this.controlType = controlType
-
-        this.setColor(initialColorVelocity || DEFAULT_COLOR_VELOCITY)
+        this.overrideColor = overrideColor
+        this.fireAllEvents = fireAllEvents
     }
 
-    setColor(velocity: number) {
-        this.colorVelocity = velocity
+    getColor() {
+        return this.overrideColor || this.controller.controlColors[this.stateState]
+    }
+    setColor(color?: VelocityColor) {
+        this.overrideColor = color
         this.draw()
     }
 
-    // Helper methods to turn control illumination on and off
-    setOn() {
-        this.setColor(this.previousColorVelocity || DEFAULT_COLOR_VELOCITY)
+    setStateOn() {
+        this.setState('on')
     }
-    setOff() {
-        if (this.colorVelocity !== OFF_COLOR_VELOCITY) {
-            this.previousColorVelocity = this.colorVelocity
-        }
-
-        this.setColor(0)
+    setStateOff() {
+        this.setState('off')
+    }
+    setState(state: string) {
+        this.stateState = state
+        this.state.set(this.stateState)
+        this.draw()
     }
 
     draw() {
-        if (this.controller.output) {
-            this.controller.output.sendControlChange(this.controlNumber, this.colorVelocity)
+        if (this.getColor()) {
+            if (this.controller.output) {
+                this.controller.output.sendControlChange(this.controlNumber, this.getColor().velocity)
+            }
+        } else {
+            console.warn(`No color for controller state "${this.state}"`)
         }
     }
 }

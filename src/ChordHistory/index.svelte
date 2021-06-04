@@ -13,22 +13,13 @@
     import { flip } from "svelte/animate";
     import { chord } from "./chordStore";
 
-    import {
-        inputId,
-        outputId,
-        controllerConfiguration,
-        synthConfiguration,
-        layoutGeneratorConfiguration,
-        scaleName,
-        rootLetter,
-        rootOctave,
-    } from "../configurationStore";
+    import { rootOctave } from "../configurationStore";
 
     export let controller: Controller;
 
     const CHORD_HISTORY_LENGTH = 6;
 
-    const { notes: controllerNotes } = controller;
+    const { notesPressed } = controller;
 
     let chordNotes: ChordNotes;
 
@@ -54,9 +45,9 @@
         }
     }
 
-    $: notes = [...$controllerNotes];
     $: {
-        chordNotes = notes.length > 1 ? chordDetect(notes) : null;
+        chordNotes =
+            $notesPressed.length > 1 ? chordDetect($notesPressed) : null;
 
         chord.set(chordNotes);
 
@@ -77,8 +68,6 @@
             addToChordHistory();
         }
     }
-
-    // TODO make there a delay before adding a chord to history! if it changes before the delay is up, start over and don't add it!
 
     let chordHistory: ChordNotes[] = [];
     let chordBank: ChordNotes[] = [];
@@ -126,14 +115,14 @@
 
     function populateProgression(
         root: string,
-        octave: number,
+        offset: number,
         progression: string
     ) {
         clearChordBank();
 
         for (const chordNotes of getProgression(
             root,
-            $rootOctave,
+            $rootOctave + offset,
             progression
         )) {
             addToChordBank(chordNotes);
@@ -149,8 +138,8 @@
             </h2>
 
             <Progressions
-                onSelect={(root, progression) =>
-                    populateProgression(root, 3, progression)}
+                onSelect={(root, offset, progression) =>
+                    populateProgression(root, offset, progression)}
             />
 
             <button on:click={() => controller.highlightClear()}>Clear</button>

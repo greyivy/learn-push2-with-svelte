@@ -3,7 +3,7 @@
 
     export let chord: ChordNotes;
 
-    export let active: boolean;
+    export let active: boolean = false;
 </script>
 
 <div class="item" class:active on:click>

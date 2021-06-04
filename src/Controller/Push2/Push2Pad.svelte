@@ -8,54 +8,49 @@
 
     const controller = pad.controller;
 
-    const padNote = pad.noteStore;
-    const padPressed = pad.pressedStore;
-    const padHighlighted = pad.highlightedStore;
+    const { note, pressed, highlighted, hovered } = pad;
 
-    $: note = $padNote;
-    $: isPressed = $padPressed;
-    $: isHighlighted = $padHighlighted;
-
-    $: noteColor = note && (pad.padNoteColor?.foreground || DEFAULT_NOTE_COLOR);
+    // Adding $note ensures reactivity
+    $: noteColor =
+        $note && (pad.padNoteColor?.foreground || DEFAULT_NOTE_COLOR);
     $: noteBackgroundColor =
-        note && (pad.padNoteColor?.background || DEFAULT_NOTE_BACKGROUND_COLOR);
+        $note &&
+        (pad.padNoteColor?.background || DEFAULT_NOTE_BACKGROUND_COLOR);
 </script>
 
 <div
     class="pad"
-    class:isPressed
-    class:isHighlighted
-    class:isRoot={note.noteNumber === 1}
-    class:isScale={note.noteNumber >= 1}
-    on:mousedown={() => controller.noteOn(pad.note, 1)}
-    on:mouseup={() => controller.noteOff(pad.note)}
+    class:pressed={$pressed}
+    class:highlighted={$highlighted}
+    class:hovered={$hovered}
+    class:rootNote={$note.noteNumber === 1}
+    class:scaleNote={$note.noteNumber >= 1}
+    on:mousedown={() => controller.noteOn(pad.getNote(), 1)}
+    on:mouseup={() => controller.noteOff(pad.getNote())}
     on:mouseover={(e) => {
+        // Allow dragging
         if (e.buttons) {
-            controller.noteOn(pad.note, 1);
+            controller.noteOn(pad.getNote(), 1);
         }
-        pad.mouseover();
+        controller.hoverNoteOn(pad.getNote());
     }}
     on:mouseout={(e) => {
+        // Allow dragging
         if (e.buttons) {
-            controller.noteOff(pad.note);
+            controller.noteOff(pad.getNote());
         }
-        pad.mouseout();
+        controller.hoverNoteOff(pad.getNote());
     }}
     style="
     --noteColor: {noteColor}; 
-    --noteBackgroundColor: {noteBackgroundColor}; 
-    --pressedColor: {pad.padPressedColor.foreground};
-    --pressedBackgroundColor: {pad.padPressedColor.background};
-    --highlightedColor: {pad.padHighlightColor.foreground};
-    --highlightedBackgroundColor: {pad.padHighlightColor.background};
-    --hoverColor: {pad.padHoverColor.foreground};
-    --hoverBackgroundColor: {pad.padHoverColor.background};"
+    --noteBackgroundColor: {noteBackgroundColor};
+    "
 >
     <span class="back" />
     <span class="front"
-        ><div class="note">{note.name.toString()}</div>
-        {#if note.noteNumber}
-            <div class="note-number">{note.noteNumber}</div>
+        ><div class="note">{$note.name.toString()}</div>
+        {#if $note.noteNumber}
+            <div class="note-number">{$note.noteNumber}</div>
         {/if}
     </span>
 </div>
@@ -100,9 +95,6 @@
     .pad:hover .front {
         transform: translateY(-0.3em);
         transition: transform 250ms cubic-bezier(0.3, 0.7, 0.4, 1.5);
-
-        background: var(--hoverBackgroundColor);
-        color: var(--hoverColor);
     }
 
     .back {
@@ -130,26 +122,32 @@
         font-size: 0.75em;
     }
 
-    .isScale .front {
+    .scaleNote .front {
         font-style: normal;
     }
-    .isRoot .front {
+    .rootNote .front {
         font-weight: bold;
     }
 
-    .isHighlighted .front,
-    .isHighlighted .back {
+    .highlighted .front,
+    .highlighted .back {
         color: var(--highlightedColor);
         background: var(--highlightedBackgroundColor);
     }
 
-    .isPressed .front,
-    .isPressed .back {
+    .pressed .front,
+    .pressed .back {
         color: var(--pressedColor) !important;
         background: var(--pressedBackgroundColor) !important;
     }
-    .isPressed .front {
+    .pressed .front {
         transform: translateY(0) !important;
         transition: transform 34ms;
+    }
+
+    .hovered .front,
+    .pad:hover .front {
+        background: var(--hoverBackgroundColor);
+        color: var(--hoverColor);
     }
 </style>

@@ -72,7 +72,7 @@ export function getProgression(
         chordNotes.push({
             chord: parsedChord,
             notes: parsedChord.notes.map(
-                (noteName) => note(`${noteName}${octave}`) as Note
+                (noteLetter) => note(`${noteLetter}${octave}`) as Note
             ),
         });
     }

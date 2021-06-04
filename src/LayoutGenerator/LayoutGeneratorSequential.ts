@@ -28,18 +28,18 @@ export class LayoutGeneratorSequential extends LayoutGenerator {
         let notes = {}
 
         let currentPadNumber: number = controller.offset
-        let currentNote: number = NOTES.indexOf(this.root.pc)
+        let currentNoteIndex: number = NOTES.indexOf(this.root.pc)
         let currentOctave: number = this.root.oct
 
         for (let r = 0; r < controller.rows; r++) {
             for (let c = 0; c < controller.columns; c++) {
-                notes[currentPadNumber] = note(`${NOTES[currentNote]}${currentOctave}`)
+                notes[currentPadNumber] = note(`${NOTES[currentNoteIndex]}${currentOctave}`)
 
-                if (currentNote === NOTES.length - 1) {
-                    currentNote = 0
+                if (currentNoteIndex === NOTES.length - 1) {
+                    currentNoteIndex = 0
                     currentOctave++
                 } else {
-                    currentNote++
+                    currentNoteIndex++
                 }
 
                 currentPadNumber++

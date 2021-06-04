@@ -19,7 +19,17 @@
     }
 </script>
 
-<div class="push2">
+<div
+    class="push2"
+    style="
+--pressedColor: {controller.pressedColor.foreground};
+--pressedBackgroundColor: {controller.pressedColor.background};
+--highlightedColor: {controller.highlightColor.foreground};
+--highlightedBackgroundColor: {controller.highlightColor.background};
+--hoverColor: {controller.hoverColor.foreground};
+--hoverBackgroundColor: {controller.hoverColor.background};
+"
+>
     <div class="display" on:click={() => display.initialize()}>
         <svg
             height={DISPLAY_WIDTH}
@@ -73,7 +83,6 @@
         padding-bottom: 16%; /* Screen aspect ratio */
         margin-bottom: 1em;
         border-radius: 0.25em;
-        background: rgb(25, 25, 25);
         cursor: pointer;
     }
 

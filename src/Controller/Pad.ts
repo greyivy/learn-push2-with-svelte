@@ -1,5 +1,5 @@
-import { writable, Writable } from 'svelte/store'
-import { getColorVelocity, PadColor, PadNoteColorCollection } from './PadColor'
+import { derived, Readable, writable, Writable } from 'svelte/store'
+import { getColorVelocity, VelocityColor, NoteNumberVelocityColorCollection } from './VelocityColor'
 import type { Controller } from './'
 import type { Note } from '@tonaljs/core'
 
@@ -11,97 +11,51 @@ class Pad {
   readonly controller: Controller;
   readonly padNumber: number;
 
-  readonly noteStore: Writable<PadNote> = writable(null);
-  note: PadNote;
+  private noteState: PadNote;
+  readonly note: Writable<PadNote> = writable(null);
 
-  readonly highlightedStore: Writable<boolean>;
-  private highlighted: boolean = false;
+  getNote(): PadNote {
+    return this.noteState;
+  }
 
-  readonly pressedStore: Writable<boolean>;
-  private pressed: boolean = false;
+  private highlightedState: boolean = false;
+  readonly highlighted: Readable<boolean>;
 
-  hovered: boolean = false;
+  private pressedState: boolean = false;
+  readonly pressed: Readable<boolean>;
 
-  overridePadNoteColors: PadNoteColorCollection;
-  overridePadPressedColor: PadColor;
-  overridePadHighlightColor: PadColor;
-  overridePadHoverColor: PadColor;
+  private hoveredState: boolean = false;
+  readonly hovered: Readable<boolean>;
 
   constructor(controller: Controller, padNumber: number) {
     this.controller = controller;
     this.padNumber = padNumber;
 
-    this.highlightedStore = writable(this.highlighted)
-    this.pressedStore = writable(this.pressed)
+    this.pressed = derived([this.controller.notesPressed, this.note], ([notes, note]) => notes.includes(note))
+    this.highlighted = derived([this.controller.notesHighlighted, this.note], ([notes, note]) => notes.includes(note))
+    this.hovered = derived([this.controller.notesHovered, this.note], ([notes, note]) => notes.includes(note))
+
+    this.pressed.subscribe(pressed => {
+      this.pressedState = pressed
+      this.draw()
+    })
+    this.highlighted.subscribe(highlighted => {
+      this.highlightedState = highlighted
+      this.draw()
+    })
+    this.hovered.subscribe(hovered => {
+      this.hoveredState = hovered
+      this.draw()
+    })
   }
 
-  get padNoteColor(): PadColor {
-    if (this.overridePadNoteColors) {
-      return this.overridePadNoteColors[this.note.noteNumber] || this.overridePadNoteColors.default
-    } else {
-      return this.controller.defaultPadNoteColors[this.note.noteNumber] || this.controller.defaultPadNoteColors.default
-    }
-  }
-  get padPressedColor(): PadColor {
-    return this.overridePadPressedColor || this.controller.defaultPadPressedColor
-  }
-  get padHighlightColor(): PadColor {
-    return this.overridePadHighlightColor || this.controller.defaultPadHighlightColor
-  }
-  get padHoverColor(): PadColor {
-    return this.overridePadHoverColor || this.controller.defaultPadHoverColor
+  get padNoteColor(): VelocityColor {
+    return this.controller.noteColors[this.noteState.noteNumber] || this.controller.noteColors.default
   }
 
   setNote(note: PadNote) {
-    // Unhighlight
-    this.highlighted = false
-    this.highlightedStore.set(this.highlighted)
-
-    this.note = note;
-    this.noteStore.set(note);
-
-    this.draw()
-  }
-
-  on() {
-    this.pressed = true;
-    this.pressedStore.set(this.pressed);
-
-    this.draw()
-  }
-  off() {
-    this.pressed = false;
-    this.pressedStore.set(this.pressed);
-
-    this.draw()
-  }
-
-  highlight(color?: PadColor) {
-    if (color) {
-      this.overridePadHighlightColor = color;
-    } else {
-      this.overridePadHighlightColor = null
-    }
-
-    this.highlighted = true
-    this.highlightedStore.set(this.highlighted)
-
-    this.draw()
-  }
-  unhighlight() {
-    this.highlighted = false
-    this.highlightedStore.set(this.highlighted)
-
-    this.draw()
-  }
-
-  mouseover() {
-    this.hovered = true
-
-    this.draw()
-  }
-  mouseout() {
-    this.hovered = false
+    this.noteState = note;
+    this.note.set(note);
 
     this.draw()
   }
@@ -114,17 +68,17 @@ class Pad {
    */
   draw() {
     if (this.controller.output) {
-      if (this.pressed) {
+      if (this.pressedState) {
         this.controller.output.playNote(this.padNumber, 'all', {
-          velocity: getColorVelocity(this.padPressedColor)
+          velocity: getColorVelocity(this.controller.pressedColor)
         })
-      } else if (this.hovered) {
+      } else if (this.hoveredState) {
         this.controller.output.playNote(this.padNumber, 'all', {
-          velocity: getColorVelocity(this.padHoverColor)
+          velocity: getColorVelocity(this.controller.hoverColor)
         })
-      } else if (this.highlighted) {
+      } else if (this.highlightedState) {
         this.controller.output.playNote(this.padNumber, 'all', {
-          velocity: getColorVelocity(this.padHighlightColor)
+          velocity: getColorVelocity(this.controller.highlightColor)
         })
       } else {
         const color = this.padNoteColor
