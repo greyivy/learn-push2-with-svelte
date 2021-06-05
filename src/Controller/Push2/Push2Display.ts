@@ -2,7 +2,7 @@ import { Push2DisplayDriver } from './Push2DisplayDriver'
 import { DISPLAY_WIDTH, DISPLAY_HEIGHT } from './Push2DisplayDriver'
 import { fabric } from 'fabric'
 import type { Controller } from '..';
-import { chord } from '../../ChordHistory/chordStore'
+import { chord } from '../../ChordDetection/chordStore'
 import { Push2DisplayKeyboard } from './Push2DisplayKeyboard';
 import { layoutGeneratorConfiguration, rootLetter, rootOctave, scaleName, synthConfiguration, synthConfigurations } from '../../configurationStore';
 import { get } from 'svelte/store';

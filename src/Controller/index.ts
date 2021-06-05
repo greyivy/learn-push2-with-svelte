@@ -1,6 +1,5 @@
 import { Writable, writable } from 'svelte/store'
 import { note, Note } from '@tonaljs/core'
-import type { Scale } from "@tonaljs/scale";
 import { get as getScale } from "@tonaljs/scale";
 import webmidi, { Input, InputEventControlchange, Output } from 'webmidi'
 import { Pad, PadNote } from './Pad'
@@ -10,7 +9,7 @@ import { enharmonic } from "@tonaljs/note";
 import type { LayoutGenerator } from '../LayoutGenerator'
 import type { SvelteComponent } from 'svelte'
 import { layoutGeneratorConfiguration, layoutGeneratorConfigurations, rootLetter, rootOctave, scaleName, scaleNames, synthConfiguration, synthConfigurations } from '../configurationStore';
-import { MAX_OCTAVE, MIN_OCTAVE, NOTES, OCTAVES } from '../helpers';
+import { MAX_OCTAVE, MIN_OCTAVE, NOTES, OCTAVES, getNext } from '../helpers';
 import { Control, ControlDefinition, ControlType } from './Control';
 
 export type ControllerConfiguration = typeof Controller & { getMeta(): ControllerMeta, getInstance(): Controller }
@@ -30,21 +29,6 @@ export type ControlCollection = {
 }
 
 export type EventType = "layoutChange" | ControlType
-
-export function getNext(value: any, values: any[]) {
-  if (values.indexOf(value) === values.length - 1) {
-    return values[0]
-  } else {
-    return values[values.indexOf(value) + 1]
-  }
-}
-export function getPrevious(value: any, values: any[]) {
-  if (values.indexOf(value) === 0) {
-    return values[values.length - 1]
-  } else {
-    return values[values.indexOf(value) - 1]
-  }
-}
 
 export abstract class Controller {
   readonly rows: number;

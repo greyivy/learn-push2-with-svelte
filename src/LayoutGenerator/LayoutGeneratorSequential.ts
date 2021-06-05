@@ -20,7 +20,7 @@ export class LayoutGeneratorSequential extends LayoutGenerator {
     static getMeta(): LayoutGeneratorMeta {
         return {
             id: 'sequential',
-            label: 'Sequential'
+            label: 'sequential'
         }
     }
 

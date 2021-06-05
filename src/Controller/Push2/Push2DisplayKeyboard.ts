@@ -12,7 +12,7 @@ const FIRST_NOTE = 'A' // 88 key keyboard starts at A
 
 const WHITE_KEY_BACKGROUND = '#fff'
 const BLACK_KEY_BACKGROUND = '#000'
-const BOUNDARY_FILL = 'rgba(255,0,0,0.5)'
+const BOUNDARY_FILL = 'rgba(0,0,0,0.5)'
 const KEY_BORDER = '#444'
 const LABEL_COLOR = '#ff0000'
 

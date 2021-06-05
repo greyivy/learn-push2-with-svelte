@@ -6,13 +6,15 @@ Learn chords, scales, and music theory on the Push 2, right inside your web brow
 
 ## Features
 - Experimental Push 2 display driver with WebUSB and Pyodide (via WebASM)
-- Highlights chords and scales onscreen and on your controller
+- Highlights chords and scales onscreen and on your controller pads
 - Labels the information about the pads on your controller onscreen
 - Mirrors the physical controller onscreen in real time
+- Shows a traditional keyboard mapped to your controller's pads
+- Predicts the chord you're currently playing
 - Helps you practice chord progressions (think Guitar Hero)
 - Easy to add other controllers (e.g. Launchpad), layout generators, and sounds because TypeScript is awesome!
 - Super performant thanks in part to to [Svelte's stores implementation](https://svelte.dev/tutorial/writable-stores) and its easy nesting
-- A few sounds and a TON of scales already
+- A few sounds and a TON of scales to try out
 
 Thanks to @stordahl for introducing me to Svelte!
 

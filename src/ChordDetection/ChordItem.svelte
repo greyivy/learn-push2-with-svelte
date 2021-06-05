@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { ChordNotes } from "./chordUtils";
+    import type { ChordNotes } from "./ChordNotes";
 
     export let chord: ChordNotes;
 
@@ -7,7 +7,7 @@
 </script>
 
 <div class="item" class:active on:click>
-    {chord.chord.name}
+    {chord.chord.name} ({chord.chord.symbol})
     <slot name="action" />
 </div>
 
@@ -22,7 +22,6 @@
         margin: 0 0 0.5em 0;
         border: 1px solid rgba(0, 0, 0, 0.1);
         box-sizing: border-box;
-        text-transform: uppercase;
         cursor: pointer;
 
         background: var(--apricot);
@@ -40,6 +39,7 @@
         height: 100%;
         background: rgba(255, 255, 255, 0.2);
         border-radius: 2px;
+        padding: 1rem;
     }
     .item.active :global(button) {
         color: var(--text-light);

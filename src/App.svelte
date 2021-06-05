@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { Modal, Button, Card, Nav } from "svelte-chota";
-	import { mdiCog } from "@mdi/js";
+	import { Card } from "svelte-chota";
 
 	import type { LayoutGenerator } from "./LayoutGenerator";
 	import type { Controller } from "./Controller";
@@ -9,7 +8,8 @@
 	import type { Note } from "@tonaljs/core";
 	import { note } from "@tonaljs/core";
 
-	import ChordHistory from "./ChordHistory/index.svelte";
+	import ChordDetection from "./ChordDetection/index.svelte";
+	import KeyboardShortcuts from "./KeyboardShortcuts.svelte";
 	import {
 		inputId,
 		outputId,
@@ -20,7 +20,8 @@
 		rootLetter,
 		rootOctave,
 	} from "./configurationStore";
-	import Config from "./Config.svelte";
+	import Nav from "./Nav.svelte";
+	import ConfigModal from "./ConfigModal.svelte";
 
 	let controller: Controller;
 	let synth: Synth;
@@ -70,31 +71,10 @@
 </script>
 
 <div class="app">
-	<Modal bind:open={configModalOpen}>
-		<Card>
-			<h4 slot="header">Settings</h4>
+	<ConfigModal bind:open={configModalOpen} />
+	<KeyboardShortcuts />
 
-			<Config />
-
-			<div slot="footer" class="is-right">
-				<Button clear on:click={() => (configModalOpen = false)}
-					>Close</Button
-				>
-			</div>
-		</Card>
-	</Modal>
-
-	<Nav>
-		<Button
-			slot="left"
-			icon={mdiCog}
-			on:click={() => (configModalOpen = true)}>Settings</Button
-		>
-
-		<a slot="center" href="/" class="brand">{$rootLetter}{$rootOctave}</a>
-
-		<a slot="right" href="/" />
-	</Nav>
+	<Nav bind:configModalOpen />
 
 	<main>
 		<svg height="250" width={controllerWidth} class="polygon">
@@ -104,39 +84,28 @@
 			/>
 		</svg>
 
-		{#if controller}
-			<div
-				class="controller-container"
-				style="font-size: {controllerScale}rem;"
-				bind:clientWidth={controllerWidth}
-			>
-				<svelte:component
-					this={$controllerConfiguration.getMeta().component}
-					{controller}
-				/>
-			</div>
+		<div
+			class="controller-container"
+			style="font-size: {controllerScale}rem;"
+			bind:clientWidth={controllerWidth}
+		>
+			<svelte:component
+				this={$controllerConfiguration.getMeta().component}
+				{controller}
+			/>
+		</div>
 
-			<div class="ui-container">
-				<Card>
-					<ChordHistory {controller} />
-				</Card>
-			</div>
-		{/if}
+		<div class="ui-container">
+			<Card>
+				<ChordDetection {controller} />
+			</Card>
+		</div>
 	</main>
 </div>
 
 <style>
 	:global(body) {
 		overflow: hidden;
-	}
-
-	.app :global(.nav) {
-		background: var(--color-primary);
-		color: var(--text-light);
-		border-bottom: 0.25rem solid var(--sandy-brown);
-	}
-	.app :global(.brand) {
-		color: var(--text-light);
 	}
 
 	main {

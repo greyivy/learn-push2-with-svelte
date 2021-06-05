@@ -100,7 +100,7 @@ export class LayoutGeneratorAbleton4ths extends LayoutGeneratorAbleton {
     static getMeta(): LayoutGeneratorMeta {
         return {
             id: 'ableton4ths',
-            label: 'Ableton 4ths Chromatic'
+            label: '4ths chromatic'
         }
     }
 }
@@ -118,7 +118,7 @@ export class LayoutGeneratorAbleton3rds extends LayoutGeneratorAbleton {
     static getMeta(): LayoutGeneratorMeta {
         return {
             id: 'ableton3ds',
-            label: 'Ableton 3ds Chromatic'
+            label: '3ds Chromatic'
         }
     }
 }
