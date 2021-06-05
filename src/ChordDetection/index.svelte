@@ -24,7 +24,7 @@
 
     const { notesPressed } = controller;
 
-    let chordNotes: ChordNotes;
+    let currentChordNotes: ChordNotes;
 
     let currentChordPlaylistIndex: number = 0;
     let chordPlaylistAdvance: boolean = true; // TODO false
@@ -32,9 +32,9 @@
 
     let chordHistoryTimeout = null;
 
-    // toodo rename bank to playlist
-    // todo rename root to scale accross the board as needed
-    function addToChordHistory(chordNotes?) {
+    // TODO rename bank to playlist
+    // TODO rename root to scale accross the board as needed
+    function addToChordHistory(chordNotes?: ChordNotes) {
         if (chordHistoryTimeout) {
             clearTimeout(chordHistoryTimeout);
         }
@@ -43,32 +43,39 @@
             // Ensure notes are held for at least xyz ms
             chordHistoryTimeout = setTimeout(() => {
                 // Add to beginning of chordHistory and trim
-                chordHistory.splice(0, 0, chordNotes);
-                chordHistory = chordHistory.slice(0, CHORD_HISTORY_LENGTH);
-                chordHistoryTimeout = null;
+                // Do not add duplicate chords
+                if (
+                    chordHistory.length === 0 ||
+                    !chordNotes.equals(chordHistory[0])
+                ) {
+                    chordHistory.splice(0, 0, chordNotes);
+                    chordHistory = chordHistory.slice(0, CHORD_HISTORY_LENGTH);
+                    chordHistoryTimeout = null;
+                }
             }, 250);
         }
     }
 
     $: {
-        chordNotes =
+        currentChordNotes =
             $notesPressed.length > 1
                 ? ChordNotes.fromNotes($notesPressed)
                 : null;
 
-        chord.set(chordNotes);
+        chord.set(currentChordNotes);
 
-        if (chordNotes) {
-            addToChordHistory(chordNotes);
+        if (currentChordNotes) {
+            addToChordHistory(currentChordNotes);
 
             // Advance chordPlaylist if needed
             if (
                 chordPlaylistAdvance &&
                 chordPlaylist.length &&
-                chordPlaylist[currentChordPlaylistIndex]?.chord.normalized ===
-                    chordNotes.chord.normalized
+                chordPlaylist[currentChordPlaylistIndex]?.equals(
+                    currentChordNotes
+                )
             ) {
-                // Note: ignores octaves, note order(?)
+                // Note: ignores octaves?
                 advanceChordPlaylist();
             }
         } else {
@@ -143,7 +150,7 @@
 
     <div class="chord">
         <h2>
-            Chord: {chordNotes?.chord.name || "none"}
+            Chord: {currentChordNotes?.chord.name || "none"}
         </h2>
     </div>
 
@@ -183,7 +190,7 @@
                 {#if chordHistory.length === 0}
                     <div class="text-grey">empty</div>
                 {/if}
-                {#each chordHistory as chord, i (chord)}
+                {#each chordHistory as chord, i (i)}
                     <div animate:flip in:fade out:fly={{ x: 100 }}>
                         <ChordItem
                             {chord}
@@ -194,7 +201,10 @@
                         >
                             <button
                                 slot="action"
-                                on:click={() => addToChordPlaylist(chord)}
+                                on:click={(e) => {
+                                    e.stopPropagation();
+                                    addToChordPlaylist(chord);
+                                }}
                                 ><Icon
                                     src={mdiArrowRight}
                                     size="24px"
@@ -263,13 +273,13 @@
         width: 20px;
     }
     .chordContainerRow :global(::-webkit-scrollbar-thumb) {
-        background: rgba(0,0,0,0.1);
+        background: rgba(0, 0, 0, 0.1);
         background-clip: content-box;
         border-left: 7px solid transparent;
         border-right: 7px solid transparent;
     }
     .chordContainerRow :global(::-webkit-scrollbar-thumb:hover) {
-        background: rgba(0,0,0,0.25);
+        background: rgba(0, 0, 0, 0.25);
         background-clip: content-box;
         transition: 250ms all;
     }

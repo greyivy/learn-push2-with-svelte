@@ -12,7 +12,16 @@ export class ChordNotes {
 
     private constructor(chord: Chord, notes: Note[]) {
         this.chord = chord
-        this.notes = notes
+        this.notes = [...notes]
+    }
+
+    equals(chordNotes: ChordNotes): boolean {
+        const midiA = new Set(this.notes.map(n => n.midi))
+        const midiB = new Set(chordNotes.notes.map(n => n.midi))
+
+        if (midiA.size !== midiB.size) return false;
+        for (let a of midiA) if (!midiB.has(a)) return false;
+        return true;
     }
 
     static fromChord(chord: Chord, octave: number): ChordNotes {
@@ -25,30 +34,38 @@ export class ChordNotes {
     }
 
     static fromChordType(chordType: ChordType, tonic: string, octave: number): ChordNotes {
-        return ChordNotes.fromChord(getChord(chordType.name, tonic), octave)
+        return ChordNotes.fromChord(getChord(chordType.name || chordType.aliases[0], tonic), octave)
     }
 
     // Note: notes MUST have octave
     static fromNotes(notes: Note[]): ChordNotes {
-        let chords = detect(notes.map((n) => n.pc));
+        let chordNotes = notes.map((n) => n.pc);
 
-        // let minorAugmentedChord = null;
+        for (let i = 0; i < chordNotes.length; i++) {
+            let chords = detect(chordNotes);
 
-        for (const currentChord of chords) {
-            let parsedChord = get(currentChord);
+            // let minorAugmentedChord = null;
 
-            if (parsedChord.empty) {
-                continue
+            for (const currentChord of chords) {
+                let parsedChord = get(currentChord);
+
+                if (parsedChord.empty) {
+                    continue
+                }
+
+                // Skip minor augmented initially
+                // See https://github.com/tonaljs/tonal/issues/242
+                if (parsedChord.type === "minor augmented") {
+                    // minorAugmentedChord = parsedChord
+                    continue
+                }
+
+                return new ChordNotes(parsedChord, notes);
             }
 
-            // Skip minor augmented initially
-            // See https://github.com/tonaljs/tonal/issues/242
-            if (parsedChord.type === "minor augmented") {
-                // minorAugmentedChord = parsedChord
-                continue
-            }
-
-            return new ChordNotes(parsedChord, notes);
+            // Shift array to the left and try again
+            const firstNote = chordNotes.shift();
+            chordNotes.push(firstNote);
         }
 
         return null;

@@ -171,7 +171,7 @@ export class Push2Display {
     this.objectRootLetterLabel = new Push2DisplayLabel(get(rootLetter), 'top', 0, 0.5)
     this.canvas.add(this.objectRootLetterLabel)
 
-    // Root octave button (todo remove -- handled by octave buttons)
+    // Root octave button
     this.objectRootOctaveLabel = new Push2DisplayLabel(String(get(rootOctave)), 'top', 0.5, 0.5)
     this.objectRootOctaveLabel.data = { rootOctave }
     this.canvas.add(this.objectRootOctaveLabel)
