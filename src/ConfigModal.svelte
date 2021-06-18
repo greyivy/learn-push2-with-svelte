@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Button, Card, Field, Modal } from "svelte-chota";
+    import { Button, Card, Field, Tag, Modal } from "svelte-chota";
 
     import DevicePicker from "./DevicePicker.svelte";
 
@@ -43,6 +43,10 @@
                         {/each}
                     </select>
                 </Field>
+                <div class="text-grey" style="margin-bottom: 0.5rem">
+                    <strong>Note: </strong>click on the virtual display to
+                    enable the display driver
+                </div>
             </fieldset>
 
             <fieldset>
@@ -97,6 +101,12 @@
                         {/each}
                     </select>
                 </Field>
+
+                <div class="text-grey" style="margin-bottom: 0.5rem">
+                    <strong>Shortcuts: </strong>
+                    <Tag>← →</Tag> root note
+                    <Tag>↑ ↓</Tag> octave
+                </div>
             </fieldset>
         </div>
 
