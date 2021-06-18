@@ -38,6 +38,7 @@
     "webmidi": "^2.5.2"
   },
   "dependencies": {
+    "gh-pages": "^3.2.2",
     "sirv-cli": "^1.0.0"
   }
 }
