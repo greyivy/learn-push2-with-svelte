@@ -2,34 +2,33 @@
 
 **🌸 Currently very early in development! Feel free to contribute <3 🌸**
 
-Learn chords, scales, and music theory on the Push 2, right inside your web browser! This started as a project to test out Svelte but it turns out, it's really useful 🤷‍♀️
+Learn chords, scales, and music theory on the Push 2, right inside your web browser! This started as a project to test out Svelte but it turns out it's really useful 🤷‍♀️
 
 ## Features
 - Experimental Push 2 display driver with WebUSB and Pyodide (via WebASM)
-- Highlights chords and scales onscreen and on your controller pads
-- Labels the information about the pads on your controller onscreen
+- Highlights chords and scales onscreen and on your controller display and pads
+- Overlays useful music theory information on top of your pads
 - Mirrors the physical controller onscreen in real time
 - Shows a traditional keyboard mapped to your controller's pads
 - Predicts the chord you're currently playing
 - Helps you practice chord progressions (think Guitar Hero)
+- A few sounds and a TON of chords, chord progressions, and scales to try out
 - Easy to add other controllers (e.g. Launchpad), layout generators, and sounds because TypeScript is awesome!
 - Super performant thanks in part to to [Svelte's stores implementation](https://svelte.dev/tutorial/writable-stores) and its easy nesting
-- A few sounds and a TON of scales to try out
 
-Thanks to @stordahl for introducing me to Svelte!
+Thanks to [@stordahl](https://github.com/stordahl) for introducing me to Svelte!
 
 ## Roadmap
-- Chord, chord progression bank
 - UI improvements
 
 ### Future ideas/improvements
 - Song bank
 - Drumming practice
-- Rewrite display driver in Rust w/ WebASM
+- Rewrite display driver in Rust (or another language) w/ WebASM
 - Configure a code formatter
 - Real-time remote jam sessions through WebRTC!?
 - ???
-- No profit (donate to mutual aid or a trans organization near you instead?)
+- No profit (donate to mutual aid or a trans organization near you instead!)
 
 ---
 
