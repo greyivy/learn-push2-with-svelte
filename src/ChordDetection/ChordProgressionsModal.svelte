@@ -7,8 +7,10 @@
     import { NOTES, OCTAVES } from "../helpers";
     import { mdiPlus } from "@mdi/js";
     import { ChordNotes } from "./ChordNotes";
-    import { chordProgressions } from "./ChordProgression";
-    import type { ChordProgression } from "./ChordProgression";
+    import { chordProgressionEntries } from "./ChordProgressionEntry";
+    import type { ChordProgressionEntry } from "./ChordProgressionEntry";
+    
+    // TODO move chord playlist to store so we can use it on the display
 
     export let open: boolean;
     export let addToChordPlaylist: (...chords: ChordNotes[]) => void;
@@ -22,9 +24,9 @@
 
     let tableContainerElement: HTMLElement;
 
-    let filteredChordProgressions: ChordProgression[];
+    let filteredChordProgressionEntries: ChordProgressionEntry[];
     $: {
-        filteredChordProgressions = chordProgressions;
+        filteredChordProgressionEntries = chordProgressionEntries;
 
         // Filter by quality
         /* if (filterQuality) {
@@ -35,10 +37,10 @@
 
         // Search by name
         if (filterSearch && filterSearch.length) {
-            const fuse = new Fuse(filteredChordProgressions, {
+            const fuse = new Fuse(filteredChordProgressionEntries, {
                 keys: ["name"],
             });
-            filteredChordProgressions = fuse
+            filteredChordProgressionEntries = fuse
                 .search(filterSearch)
                 .map((c) => c.item);
         }
@@ -54,14 +56,29 @@
         open && filterSearchElement?.focus();
     }
 
-    function addItemToChordPlaylist(chordProgression: ChordProgression) {
+    function addItemToChordPlaylist(chordProgression: string[]) {
         const chordProgressionChordNotes = ChordNotes.fromProgression(
-            chordProgression.progression,
+            chordProgression,
             selectedTonicLetter || $rootLetter,
             selectedOctave || $rootOctave + 1
         );
 
         addToChordPlaylist(...chordProgressionChordNotes);
+    }
+
+    function promptChordProgression() {
+        const chordProgression = window.prompt(
+            "Enter chord progression in interval notation:"
+        );
+
+        const chordProgressionSplit = chordProgression.split(/[\s-]/);
+
+        try {
+            addItemToChordPlaylist(chordProgressionSplit);
+            open = false;
+        } catch (e) {
+            window.alert(e.message);
+        }
     }
 </script>
 
@@ -100,12 +117,13 @@
                         bind:this={filterSearchElement}
                         on:keypress={(e) => {
                             // Add first item in list
-                            if (e.key === 'Enter') {
+                            if (e.key === "Enter") {
                                 e.preventDefault();
-                                if (filteredChordProgressions[0]) {
+                                if (filteredChordProgressionEntries[0]) {
                                     open = false;
                                     addItemToChordPlaylist(
-                                        filteredChordProgressions[0]
+                                        filteredChordProgressionEntries[0]
+                                            .progression
                                     );
                                 }
                             }
@@ -122,13 +140,21 @@
                 <thead>
                     <tr>
                         <th> Name </th>
-                        <th>{" "}</th>
+                        <th class="buttonColumn">
+                            <Button
+                                primary
+                                outline
+                                icon={mdiPlus}
+                                on:click={() => promptChordProgression()}
+                                >Custom</Button
+                            ></th
+                        >
                     </tr>
                 </thead>
-                {#each filteredChordProgressions as chordProgression}
+                {#each filteredChordProgressionEntries as chordProgressionEntry}
                     <tr>
                         <td>
-                            {chordProgression.name}
+                            {chordProgressionEntry.name}
                         </td>
                         <td class="buttonColumn">
                             <Button
@@ -136,7 +162,9 @@
                                 title="Add to chord playlist"
                                 icon={mdiPlus}
                                 on:click={() =>
-                                    addItemToChordPlaylist(chordProgression)}
+                                    addItemToChordPlaylist(
+                                        chordProgressionEntry.progression
+                                    )}
                             />
                         </td>
                     </tr>

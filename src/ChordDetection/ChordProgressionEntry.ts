@@ -1,9 +1,9 @@
-export type ChordProgression = {
+export type ChordProgressionEntry = {
     name: string;
     progression: string[]
 }
 
-export const chordProgressions: ChordProgression[] = [
+export const chordProgressionEntries: ChordProgressionEntry[] = [
     {
         name: "Test progression",
         progression: ["IMaj7", "IIm7", "V7"],

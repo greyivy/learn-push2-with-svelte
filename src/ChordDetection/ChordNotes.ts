@@ -25,6 +25,10 @@ export class ChordNotes {
     }
 
     static fromChord(chord: Chord, octave: number): ChordNotes {
+        if (chord.empty) {
+            throw new Error('Invalid chord')
+        }
+
         const notes =
             chord.intervals
                 .map(interval => transpose(`${chord.tonic}${octave}`, interval))
@@ -72,10 +76,20 @@ export class ChordNotes {
     }
 
     static fromProgression(progression: string[], tonic: string, octave: number): ChordNotes[] {
-        const chords = Progression.fromRomanNumerals(
-            tonic,
-            progression
-        );
+        let chords;
+
+        try {
+            chords = Progression.fromRomanNumerals(
+                tonic,
+                progression
+            );
+        } catch (e) {
+            throw new Error('Invalid chord progression: unable to parse chord progression')
+        }
+
+        if (chords.length < 2) {
+            throw new Error('Invalid chord progression: must have at least 2 chords')
+        }
 
         const chordNotes: ChordNotes[] = []
 

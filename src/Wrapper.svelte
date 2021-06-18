@@ -33,6 +33,7 @@
 </main>
 
 <style>
+    /* TODO why can't I override chota styles? */
     :global(:root) {
         --apricot: hsla(21, 100%, 85%, 1);
         --melon: hsla(12, 100%, 82%, 1);
@@ -59,7 +60,8 @@
             0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
     }
 
-    :global(.button, [type="button"], [type="reset"], [type="submit"], button) {
+    /* TODO why can't I override chota styles without adding :root? */
+    :global(:root .button, :root [type="button"], :root [type="reset"], :root [type="submit"], :root button) {
         background: #fff;
     }
 </style>
