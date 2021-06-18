@@ -23,6 +23,7 @@
     "chota": "^0.8.0",
     "fabric": "^4.5.0",
     "fuse.js": "^6.4.6",
+    "gh-pages": "^3.2.2",
     "rollup": "^2.3.4",
     "rollup-plugin-css-only": "^3.1.0",
     "rollup-plugin-livereload": "^2.0.0",
