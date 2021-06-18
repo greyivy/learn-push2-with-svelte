@@ -1,7 +1,0 @@
-The Layout (Encoder 1) and Direction (Encoder 8) controls work together to determine the orientation of the pad grid. The default settings are a Layout of “4ths” and a Direction of “Vert.” In this configuration, each pad is a 4th higher than the pad directly below it. Changing the Layout to “3rds“ means that each pad is now a 3rd higher than the pad directly below it. The “Sequent” layout puts all notes sequentially in order. This layout is useful if you need a very large range of notes available, because it has no duplicated notes.
-
-Changing the Direction control to “Horiz.” rotates the pad grid 90 degrees. For example, with a Layout of “4ths,” each pad is a 4th higher than the pad to its left.
-
-Fixed Off/On: The lower right display button toggles Fixed on or off. When Fixed is on, the notes on the pad grid remain in the same positions when you change keys; the bottom-left pad will always play C (except in keys that don’t contain a C, in which case the bottom-left pad will play the nearest note in the key.) When Fixed is off, the notes on the pad grid shift so that the bottom-left pad always plays the root of the selected key.
-
-In Key/Chromatic: The lower left display button toggles between In Key and Chromatic. With In Key selected, the pad grid is effectively “folded” so that only notes within the key are available. In Chromatic Mode, the pad grid contains all notes. Notes that are in the key are lit, while notes that are not in the key are unlit.
