@@ -28,6 +28,7 @@ Thanks to [@stordahl](https://github.com/stordahl) for introducing me to Svelte!
 ### Future ideas/improvements
 - Song bank
 - Drumming practice
+- Fix chord equality (e.g. when advancing the chord bank)
 - Rewrite display driver in Rust (or another language) w/ WebASM
 - Configure a code formatter
 - Real-time remote jam sessions through WebRTC!?
