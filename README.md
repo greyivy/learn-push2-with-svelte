@@ -8,6 +8,8 @@ Learn chords, scales, and music theory on the Push 2, right inside your web brow
 
 **[View in any Chromium-based browser](https://greyivy.github.io/learn-push2-with-svelte)**
 
+https://user-images.githubusercontent.com/5335625/122630992-7b3b2b80-d0b7-11eb-9c0d-1e01e7e6c60c.mp4
+
 ## Features
 - Experimental Push 2 display driver with WebUSB and Pyodide (via WebASM)
 - Highlights chords and scales onscreen and on your controller display and pads
