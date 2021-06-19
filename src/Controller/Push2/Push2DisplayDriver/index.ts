@@ -31,7 +31,7 @@ export class Push2DisplayDriver {
         canvas.height = DISPLAY_HEIGHT
 
         this.context = canvas.getContext('2d')
-        this.worker = new Worker('/worker.js')
+        this.worker = new Worker('./worker.js')
     }
 
     async initialize() {
