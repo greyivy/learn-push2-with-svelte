@@ -12,6 +12,7 @@ https://user-images.githubusercontent.com/5335625/122630992-7b3b2b80-d0b7-11eb-9
 
 ## Features
 - Experimental Push 2 display driver with WebUSB and Pyodide (via WebASM)
+- Works on Push 2 and Push 1 (without a working display driver at the moment)
 - Highlights chords and scales onscreen and on your controller display and pads
 - Overlays useful music theory information on top of your pads
 - Mirrors the physical controller onscreen in real time
@@ -28,6 +29,8 @@ Thanks to [@stordahl](https://github.com/stordahl) for introducing me to Svelte!
 - UI improvements
 
 ### Future ideas/improvements
+- Launchpad support
+- Push 1 display support
 - Song bank
 - Drumming practice
 - Fix chord equality (e.g. when advancing the chord bank)
