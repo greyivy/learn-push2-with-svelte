@@ -9,6 +9,7 @@
     import { initializeDeviceConfiguration } from "./configurationStore";
 
     let initialized: boolean;
+    let ready: boolean;
 
     // Initialize WebMidi
     onMount(() => {
@@ -24,11 +25,15 @@
     });
 </script>
 
-<main>
-    {#if initialized}
+<main on:click={() => {
+    if (initialized) ready = true;
+}}>
+    {#if ready}
         <App />
+    {:else if initialized}
+        <div class="fullscreen" style="cursor: pointer;">Click anywhere to begin</div>
     {:else}
-        Loading...
+        <div class="fullscreen">Initializing...</div>
     {/if}
 </main>
 
@@ -63,5 +68,14 @@
     /* TODO why can't I override chota styles without adding :root? */
     :global(:root .button, :root [type="button"], :root [type="reset"], :root [type="submit"], :root button) {
         background: #fff;
+    }
+
+    .fullscreen {
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2em;
     }
 </style>

@@ -5,7 +5,7 @@
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
-    "start": "sirv public --no-clear",
+    "start": "sirv public --no-clear --port 5555",
     "deploy": "node ./gh-pages.js",
     "validate": "svelte-check",
     "svelte-check": "svelte-check"

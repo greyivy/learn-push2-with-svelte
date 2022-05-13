@@ -16,6 +16,8 @@ type WorkerResponse = {
     error?: any
 }
 
+const delay = ms => new Promise(r => setTimeout(r, ms));
+
 export class Push2DisplayDriver {
     worker: Worker;
     device: USBDevice;
@@ -73,6 +75,9 @@ export class Push2DisplayDriver {
             await this.callWorkerAsync('drawFrame', {
                 frame: imageData.data
             });
+
+            // Without this delay, the display driver breaks on M1 Macs
+            await delay(5);
         }
 
         // Blank the screen
